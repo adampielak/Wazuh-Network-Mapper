@@ -66,6 +66,7 @@ FAMILIES: dict = {
                   "cpe": ("a", "cisco", "adaptive_security_appliance_software")},
     # cpe:2.3:o:fortinet:fortios (271 entries)
     "fortinet_fortios": {"label": "Fortinet FortiOS", "cpe": ("o", "fortinet", "fortios")},
+    "juniper_junos": {"label": "Juniper Junos", "cpe": ("o", "juniper", "junos")},
     # No faithful CPE: the dictionary has no h3c:comware or hpe:comware product,
     # only per-part-number entries for some Comware 7 products, and "1920"
     # finds only the HPE OfficeConnect 1920S, a different product. So keyword
@@ -98,6 +99,10 @@ def detect_family(vendor: Optional[str], sys_descr: Optional[str],
 _CLASSIC_IOS = re.compile(r"^\d+\.\d+\(\d+[a-z]?\)[A-Z]+[A-Z0-9]*[a-z]?$")
 
 
+# Junos "JUNOS 19.4R3-S1": train 19.4, update r3-s1 (NVD CPE juniper:junos:19.4:r3-s1)
+_JUNOS = re.compile(r"^JUNOS\s+(\d+\.\d+)(R\d+(?:-S\d+(?:\.\d+)?)?)\s*$", re.I)
+
+
 def family_of(node: dict) -> Optional[str]:
     """The recorded family, else a narrow inference for an older graph.
 
@@ -111,6 +116,8 @@ def family_of(node: dict) -> Optional[str]:
         return "cisco_ios"
     if vendor == "Fortinet" and model.startswith("FortiGate"):
         return "fortinet_fortios"
+    if vendor == "Juniper" and _JUNOS.match(firmware):
+        return "juniper_junos"
     if vendor == "HP" and _COMWARE_FIRMWARE.match(firmware):
         return "hp_comware"
     return None
@@ -149,11 +156,16 @@ def identify(node: dict) -> dict:
     a host that answered SNMP (vulnmapper.hosts)."""
     out = {"family": None, "product": None, "cpe": None, "match": "unidentified",
            "keyword": None, "version": None}
-    if not (node.get("kind") == "device" and node.get("pollable")) and not node.get("snmp"):
+    if not (node.get("kind") == "device" and node.get("pollable")) and not node.get("snmp") \
+            and not node.get("software_family"):
         return out                        # seen only in a neighbour's table
     family = family_of(node)
     entry = FAMILIES.get(family)
     firmware = (node.get("firmware") or "").strip()
+    if family == "fortinet_fortios":
+        # inventory strings look like "v7.4.12,build2902,260505 (GA.M)"; the CPE version is "7.4.12"
+        fm = re.match(r"^v?(\d+\.\d+\.\d+)(?:[,\s]|$)", firmware)
+        firmware = fm.group(1) if fm else firmware
     if entry is None:
         return out
     out["family"] = family
@@ -163,6 +175,11 @@ def identify(node: dict) -> dict:
     out["version"] = firmware
     if entry.get("cpe"):
         part, vendor, product = entry["cpe"]
+        jm = _JUNOS.match(firmware) if family == "juniper_junos" else None
+        if jm:
+            out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{jm.group(1)}:{jm.group(2).lower()}:*:*:*:*:*:*:*"
+            out["match"] = "cpe"
+            return out
         out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{cpe_value(firmware)}:*:*:*:*:*:*:*"
         out["match"] = "cpe"
     elif entry.get("keyword"):

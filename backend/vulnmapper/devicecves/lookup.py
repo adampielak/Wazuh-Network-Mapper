@@ -115,8 +115,13 @@ def lookup(ident: dict, client: NvdClient, cache: Cache) -> Lookup:
     try:
         if ident["match"] == "cpe":
             cpe = ident["cpe"]
-            listed = _answer(cache, f"cpe-dictionary:{cpe}",
-                             lambda: client.cpe_listed(cpe), bool, result)
+            # FortiOS: NVD evaluates versionStart/End ranges for a well-formed
+            # name even when that exact release is not in the CPE dictionary.
+            if cpe.startswith("cpe:2.3:o:fortinet:fortios:"):
+                listed = {"data": True, "fetched_at": None}
+            else:
+                listed = _answer(cache, f"cpe-dictionary:{cpe}",
+                                 lambda: client.cpe_listed(cpe), bool, result)
             if not listed["data"]:
                 result.status, result.reason = STATUS_UNVERIFIED, "not_in_dictionary"
                 result.fetched_at = listed["fetched_at"]

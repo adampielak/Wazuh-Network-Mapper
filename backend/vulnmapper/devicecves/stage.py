@@ -102,7 +102,7 @@ def run_stage(graph: dict, client: NvdClient, cache: Cache) -> StageResult:
     from_cache = 0
     # A host that answered SNMP with a software family is looked up the same way.
     devices = [n for n in graph.get("nodes") or [] if n.get("kind") == KIND_DEVICE
-               or (n.get("snmp") and n.get("software_family"))]
+               or n.get("software_family")]
     for node in devices:
         result = lookup(families.identify(node), client, cache)
         rows = apply_result(node, result)

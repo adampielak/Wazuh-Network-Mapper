@@ -143,9 +143,13 @@ class TestCpe(unittest.TestCase):
                        software_family="hp_comware")
         self.assertEqual(r["match"], "unidentified")
 
-    def test_device_never_polled_is_unidentified(self):
+    def test_device_never_polled_keeps_its_recorded_family(self):
         r = fam.identify({"kind": "device", "pollable": False, "vendor": "Cisco",
                           "firmware": "12.2(55)SE12", "software_family": "cisco_ios"})
+        self.assertEqual((r["match"], r["family"]), ("cpe", "cisco_ios"))
+
+    def test_device_seen_only_in_a_neighbour_table_is_unidentified(self):
+        r = fam.identify({"kind": "device", "pollable": False, "vendor": "Cisco"})
         self.assertEqual(r["match"], "unidentified")
 
 

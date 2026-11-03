@@ -603,20 +603,23 @@ class Pipeline:
         )
 
     def emit(self, document: dict, output_path: Optional[str]) -> None:
-        text = json.dumps(document, indent=2)
         if output_path:
+            # streamed: json.dumps(indent=2) built the whole text in memory as
+            # well, which ran a large scan (~30k findings) out of memory
             with open(output_path, "w", encoding="utf-8", newline="\n") as f:
-                f.write(text + "\n")
+                json.dump(document, f, indent=2)
+                f.write("\n")
             log.info("wrote graph to %s", output_path)
         else:
-            sys.stdout.write(text + "\n")
+            json.dump(document, sys.stdout, indent=2)
+            sys.stdout.write("\n")
             sys.stdout.flush()
 
     @staticmethod
     def _write_vulnerabilities(scan: ScanContext) -> None:
         if scan.vulns_path:
             write_json_atomic(scan.vulns_path,
-                                  scan.vulnerabilities(scan.document["metadata"]["scan_time"]))
+                              scan.vulnerabilities(scan.document["metadata"]["scan_time"]))
             log.info("wrote vulnerabilities to %s", scan.vulns_path)
         else:
             log.info("graph went to stdout and --vulns-out was not given; "

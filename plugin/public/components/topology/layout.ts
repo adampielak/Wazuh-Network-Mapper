@@ -133,6 +133,37 @@ export function subnet24(ip: unknown): string | null {
   return parts.length === 4 ? parts.slice(0, 3).join(".") : null;
 }
 
+// A rank holding hundreds of nodes (unlinked devices, flat meshes) comes out of
+// dagre as one strip tens of thousands of px wide, unreadable once fitted to the
+// screen. Rows wider than `perRow` are folded into stacked rows laid on a grid
+// (centred on the original rank), and every rank below is pushed down to match.
+export const ROW_GAP = 40;
+const NODE_GAP = 64;
+export function rowCapacity(count: number): number {
+  return Math.max(10, Math.ceil(Math.sqrt(count * 1.2)));
+}
+export function wrapRanks(items: { position: { x: number; y: number } }[], perRow: number): void {
+  const ranks = new Map<number, typeof items>();
+  for (const it of items) {
+    const y = Math.round(it.position.y);
+    ranks.set(y, [...(ranks.get(y) || []), it]);
+  }
+  let shift = 0;
+  for (const y of [...ranks.keys()].sort((a, b) => a - b)) {
+    // dagre keeps separate components far apart; re-space every rank on one shared axis (x=0)
+    // in dagre's left-to-right order so the whole map stays compact.
+    const row = ranks.get(y)!.sort((a, b) => a.position.x - b.position.x);
+    const lines = Math.ceil(row.length / perRow);
+    row.forEach((it, i) => {
+      const line = Math.floor(i / perRow);
+      const inLine = Math.min(perRow, row.length - line * perRow);
+      const k = i - line * perRow;
+      it.position.x = (k - (inLine - 1) / 2) * (NODE_W + NODE_GAP);
+      it.position.y = y + shift + line * (NODE_H + ROW_GAP);
+    });
+    shift += (lines - 1) * (NODE_H + ROW_GAP);
+  }
+}
 /**
  * Pure layout-prep. Input: the raw graph.json ({ nodes, edges }). Output:
  *   {
@@ -223,6 +254,7 @@ export function layoutGraph(
     };
   });
 
+  wrapRanks(outNodes, rowCapacity(nodes.length));
   // Rendered edges: every confirmed link (inferred:false) plus the dashed
   // inferred links so the UI can style them as tentative.
   const ids = new Set(nodes.map((n) => n.node_id));

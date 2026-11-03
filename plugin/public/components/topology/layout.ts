@@ -153,20 +153,58 @@ export function rowCapacity(count: number): number {
  * wider and taller than the node itself when it carries a pendant block; the
  * folder writes the box's top-left corner back into `position`.
  */
-export type WrapItem = { position: { x: number; y: number }; w: number; h: number };
+export type WrapItem = {
+  id: string;
+  position: { x: number; y: number };
+  w: number;
+  h: number;
+};
 
-export function wrapRanks(items: WrapItem[], perRow: number): void {
+/**
+ * Folds every rank into stacked lines. `parentsOf` lists, per node, the ranked
+ * nodes above it; when it is given, each rank is ordered by the mean x of its
+ * already-placed parents (a barycentre pass) instead of by dagre's own x.
+ * dagre orders a rank for one straight line, which stops being the right order
+ * once that line is folded into three or four, so without this pass a child can
+ * land several lines away from its parent horizontally.
+ */
+export function wrapRanks(
+  items: WrapItem[],
+  perRow: number,
+  parentsOf?: Map<string, string[]>
+): void {
   const ranks = new Map<number, WrapItem[]>();
   for (const it of items) {
     const y = Math.round(it.position.y);
     ranks.set(y, [...(ranks.get(y) || []), it]);
   }
   const maxLineW = perRow * (NODE_W + NODE_GAP);
+  const centre = new Map<string, number>();
   let top = 0;
   for (const y of [...ranks.keys()].sort((a, b) => a - b)) {
     // dagre keeps separate components far apart; re-space every rank on one
     // shared axis (x=0) in dagre's left-to-right order so the map stays compact.
     const row = ranks.get(y)!.sort((a, b) => a.position.x - b.position.x);
+    if (parentsOf) {
+      const bary = new Map<WrapItem, number>();
+      const anchored: WrapItem[] = [];
+      const loose: WrapItem[] = [];
+      for (const it of row) {
+        const placed = (parentsOf.get(it.id) || [])
+          .map((id) => centre.get(id))
+          .filter((v): v is number => v != null);
+        if (placed.length) {
+          bary.set(it, placed.reduce((a, b) => a + b, 0) / placed.length);
+          anchored.push(it);
+        } else {
+          // Nothing above it yet: keep dagre's own order for these.
+          loose.push(it);
+        }
+      }
+      anchored.sort((a, b) => bary.get(a)! - bary.get(b)!);
+      row.length = 0;
+      row.push(...anchored, ...loose);
+    }
     const lines: WrapItem[][] = [];
     let width = 0;
     for (const it of row) {
@@ -187,6 +225,7 @@ export function wrapRanks(items: WrapItem[], perRow: number): void {
       for (const it of line) {
         it.position.x = x;
         it.position.y = top;
+        centre.set(it.id, x + it.w / 2);
         x += it.w + NODE_GAP;
         height = Math.max(height, it.h);
       }
@@ -373,9 +412,18 @@ export function layoutGraph(
       const { x, y } = g.node(n.node_id);
       const w = boxW(n.node_id);
       const h = boxH(n.node_id);
-      boxes.set(n.node_id, { position: { x: x - w / 2, y: y - h / 2 }, w, h });
+      boxes.set(n.node_id, {
+        id: n.node_id,
+        position: { x: x - w / 2, y: y - h / 2 },
+        w,
+        h,
+      });
     }
-    wrapRanks([...boxes.values()], rowCapacity(nodes.length));
+    const parentsOf = new Map<string, string[]>();
+    for (const [from, to] of ranking) {
+      parentsOf.set(to, [...(parentsOf.get(to) || []), from]);
+    }
+    wrapRanks([...boxes.values()], rowCapacity(nodes.length), parentsOf);
   }
 
   const place = new Map<string, { x: number; y: number }>();

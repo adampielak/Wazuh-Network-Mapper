@@ -256,6 +256,24 @@ class TestPrepare(Base):
         affected, undecided = jr.assess(junos.parse_device(JUNOS_FW), "mx204")
         self.assertNotIn(IDS[0], [r["id"] for r in affected])
 
+    def test_same_release_and_model_assessed_once(self):
+        from unittest import mock
+        from vulnmapper.devicecves import junos
+        jr = self.records()
+        jr.prepare()
+        v = junos.parse_device(JUNOS_FW)
+        with mock.patch.object(junos, "decide", wraps=junos.decide) as decide:
+            first = jr.assess(v, "mx204")
+            calls = decide.call_count
+            first[0].clear()
+            first[1].clear()                   # a caller's lists are its own
+            again = jr.assess(junos.parse_device(JUNOS_FW), "mx204")
+            self.assertEqual(decide.call_count, calls)
+            self.assertEqual([r["id"] for r in again[0]], ["CVE-2021-31353"])
+            self.assertEqual(again[1], ["CVE-2023-28985"])
+            jr.assess(v, "ex4300-48t")         # another model is assessed on its own
+            self.assertEqual(decide.call_count, 2 * calls)
+
 
 def junos_node(firmware=JUNOS_FW, model="mx204", node_id="device:00:00:5e:00:53:01"):
     return {"node_id": node_id, "kind": "device", "pollable": True, "status": "online",

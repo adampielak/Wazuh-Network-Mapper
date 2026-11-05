@@ -141,6 +141,7 @@ class JuniperRecords:
         self.reason: Optional[str] = None      # why not complete
         self.ids: list = []
         self.records: dict = {}                # CVE id -> trimmed record (found entries only)
+        self._assessed: dict = {}              # (release, model) -> (affected, undecided)
         self.fetched_at: dict = {}             # CVE id -> when its entry was fetched
         self.stats = {"index": None, "index_requests": 0, "ids": 0, "fetched": 0,
                       "not_found": 0, "unanswered": 0, "requests": 0, "pending": 0}
@@ -327,7 +328,15 @@ class JuniperRecords:
     def assess(self, v: "junos.Release", model: Optional[str]) -> tuple:
         """``(affected, undecided)`` for a device running ``v``: the published
         records whose Junos OS blocks give AFFECTED, and the ids they leave
-        UNDECIDED, both sorted by id."""
+        UNDECIDED, both sorted by id. Devices on the same release and model
+        share one assessment: the records do not change after :meth:`prepare`."""
+        key = (v, model or "")
+        if key not in self._assessed:
+            self._assessed[key] = self._assess(v, model or "")
+        affected, undecided = self._assessed[key]
+        return list(affected), list(undecided)
+
+    def _assess(self, v: "junos.Release", model: str) -> tuple:
         affected, undecided = [], []
         for cve_id in sorted(self.records):
             record = self.records[cve_id]

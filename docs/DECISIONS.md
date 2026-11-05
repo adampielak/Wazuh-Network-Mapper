@@ -128,3 +128,7 @@ CVEs Juniper did not assign. The records are taken from the CVE Services API
 - Anything not parsed is listed in `cve_lookup.undecided`, never guessed.
   `cve_lookup` gained `reason` (why a lookup is not `ok`) and `undecided`, and
   the plugin says both in plain words.
+- Every Junos device is compared with every record (about 1200), so the
+  stage keeps the parsed version strings for the scan and assesses each
+  release and model pair once. Without that, a scan with many Junos devices
+  took over a minute of CPU; the decisions are the same either way.

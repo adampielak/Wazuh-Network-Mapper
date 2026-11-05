@@ -53,6 +53,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Optional
 
 AFFECTED, UNAFFECTED, UNDECIDED = "affected", "unaffected", "undecided"
@@ -124,11 +125,19 @@ def _token(text: str):
 
 
 def _tokens(text: str) -> list:
+    return list(_parsed_tokens(text))
+
+
+@lru_cache(maxsize=65536)
+def _parsed_tokens(text: str) -> tuple:
+    # Every device is compared with every record, so the same version strings
+    # are parsed once per device; the result depends on the text alone and
+    # its items are immutable. Unparsed is raised again each time (not cached).
     text = re.sub(r"^(\d+),(\d+)$", r"\1.\2", text.strip())   # "23,2" is 23.2 in one record
     text = re.sub(r"\(pending\)", " ", text, flags=re.I)        # "17.3R3-S7 (pending)"
     text = re.sub(r"\band(?=\d)", "and ", text)                 # "S12 and15.1R7-S4"
     parts = re.split(r",|\s+and to\s+|\s+and\s+|\s+or\s+|\s+to\s+|\s+", text)
-    return [_token(p) for p in parts if p.strip().strip(",.")]
+    return tuple(_token(p) for p in parts if p.strip().strip(",."))
 
 
 def _cmp(v: Release, t: Release) -> int:

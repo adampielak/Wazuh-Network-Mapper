@@ -55,6 +55,57 @@ class TestParseDevice(unittest.TestCase):
         for fw in ("15.1X49-D200.5", "22.4R3-S1-EVO", "18.4F1", "", "JUNOS"):
             self.assertIsNone(junos.parse_device(fw), fw)
 
+    def test_evolved_releases(self):
+        self.assertEqual(junos.parse_device("JUNOS 22.2R3-S1.2-EVO", evolved=True),
+                         Release(22, 2, 3, 1, 2))
+        self.assertEqual(junos.parse_device("21.1R2-EVO", evolved=True), Release(21, 1, 2, 0, None))
+        self.assertTrue(junos.is_evolved("21.1R2-evo"))
+        self.assertFalse(junos.is_evolved("21.1R2"))
+        for fw in ("21.1R2", "15.1X49-D200.5", ""):
+            self.assertIsNone(junos.parse_device(fw, evolved=True), fw)
+
+
+class TestEvolved(unittest.TestCase):
+    """The Junos OS Evolved block of CVE-2021-31353: affected before
+    20.4R2-S3 and 20.4R3, 21.1 before 21.1R2, 21.2 before 21.2R2."""
+
+    def setUp(self):
+        self.blocks = trim_record(cna_record("CVE-2021-31353"))["evo_blocks"]
+
+    def test_record_keeps_its_evolved_block_apart(self):
+        self.assertEqual([b["product"] for b in self.blocks], ["Junos OS Evolved"])
+        self.assertTrue(junos.is_evolved_block(self.blocks[0]))
+        self.assertFalse(junos.is_junos_block(self.blocks[0]))
+
+    def test_decisions(self):
+        for fw, want in (("21.1R1-S1-EVO", AFFECTED), ("20.4R2-S2-EVO", AFFECTED),
+                         ("21.2R1-EVO", AFFECTED), ("21.1R2-EVO", UNAFFECTED),
+                         ("20.4R3-EVO", UNAFFECTED), ("22.1R1-EVO", UNAFFECTED)):
+            with self.subTest(fw=fw):
+                v = junos.parse_device(fw, evolved=True)
+                self.assertEqual(junos.decide(self.blocks, v, "ptx10008", evolved=True)[0], want)
+
+    def test_regular_blocks_do_not_decide_an_evolved_release(self):
+        # Junos OS: 20.3 before 20.3R2 unaffected; Evolved: everything before
+        # 20.4R2-S3 affected
+        v = junos.parse_device("20.3R1-EVO", evolved=True)
+        regular = trim_record(cna_record("CVE-2021-31353"))["blocks"]
+        self.assertEqual(junos.decide(self.blocks, v, "ptx10008", evolved=True)[0], AFFECTED)
+        self.assertNotEqual(junos.decide(regular, v, "ptx10008")[0], AFFECTED)
+
+    def test_changes_drop_the_suffix(self):
+        b = block(rng("21.1-EVO", "21.1R3-EVO", changes=[("21.1R2-EVO", UNAFFECTED)]),
+                  product="Junos OS Evolved")
+        self.assertEqual(junos.decide([b], junos.parse_device("21.1R1-EVO", evolved=True),
+                                      "x", evolved=True)[0], AFFECTED)
+        self.assertEqual(junos.decide([b], junos.parse_device("21.1R2-EVO", evolved=True),
+                                      "x", evolved=True)[0], UNAFFECTED)
+
+    def test_evo_blocks(self):
+        self.assertEqual(junos.evo_blocks(None), [])
+        self.assertEqual(junos.evo_blocks([block(product="Junos OS"), "x"]), [])
+        self.assertEqual(len(junos.evo_blocks([block(product="Junos OS Evolved")])), 1)
+
 
 class TestPublishedRecords(unittest.TestCase):
     """Decisions for real records: (firmware, {model: status}) per CVE."""

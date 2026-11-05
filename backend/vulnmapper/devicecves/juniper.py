@@ -87,7 +87,8 @@ def records_cache(path: Optional[str], clock) -> Cache:
 
 def trim_record(doc: dict) -> dict:
     """A CVE JSON 5 record -> the NVD record shape ``parse_cve`` reads, plus
-    ``state`` and ``blocks`` (the Junos OS affected blocks)."""
+    ``state``, ``blocks`` (the Junos OS affected blocks) and ``evo_blocks``
+    (the Junos OS Evolved affected blocks)."""
     meta = doc.get("cveMetadata") or {}
     cna = (doc.get("containers") or {}).get("cna") or {}
     if not isinstance(meta, dict) or not isinstance(cna, dict):
@@ -115,6 +116,7 @@ def trim_record(doc: dict) -> dict:
         "references": [{"url": refs[0]}] if refs else [],
         "metrics": metrics,
         "blocks": junos.junos_blocks(cna.get("affected")),
+        "evo_blocks": junos.evo_blocks(cna.get("affected")),
     }
 
 
@@ -137,11 +139,12 @@ class JuniperRecords:
         self._started = 0.0
         self.prepared = False
         self.complete = False
+        self.evo_complete = False              # every found record carries its Evolved blocks
         self.stale = False
         self.reason: Optional[str] = None      # why not complete
         self.ids: list = []
         self.records: dict = {}                # CVE id -> trimmed record (found entries only)
-        self._assessed: dict = {}              # (release, model) -> (affected, undecided)
+        self._assessed: dict = {}              # (release, model, evolved) -> (affected, undecided)
         self.fetched_at: dict = {}             # CVE id -> when its entry was fetched
         self.stats = {"index": None, "index_requests": 0, "ids": 0, "fetched": 0,
                       "not_found": 0, "unanswered": 0, "requests": 0, "pending": 0}
@@ -254,6 +257,8 @@ class JuniperRecords:
         entry = self.cache.get(cve_id)
         if entry is None:
             return None, True
+        if entry["found"] and isinstance(entry.get("data"), dict) and "evo_blocks" not in entry["data"]:
+            return entry, True          # kept before Evolved blocks were stored
         since = _parse_time(changed.get(cve_id)) if cve_id in changed else None
         if since is not None and _parse_time(entry["fetched_at"]) < since:
             return entry, True
@@ -300,7 +305,7 @@ class JuniperRecords:
                 index["data"] = {**index["data"], "changed": changed}
                 self.cache.dirty = True
             self.cache.save()
-            missing, expired = [], 0
+            missing, expired, no_evo = [], 0, 0
             for cve_id in self.ids:
                 entry = self.cache.get(cve_id)
                 if entry is None:
@@ -311,8 +316,9 @@ class JuniperRecords:
                 self.fetched_at[cve_id] = entry["fetched_at"]
                 if entry["found"] and isinstance(entry.get("data"), dict):
                     self.records[cve_id] = entry["data"]
+                    no_evo += "evo_blocks" not in entry["data"]
         synced = _parse_time(data.get("synced_at"))
-        self.stats.update(ids=len(self.ids), pending=len(missing) + expired)
+        self.stats.update(ids=len(self.ids), pending=len(missing) + expired, evo_pending=no_evo)
         self.stale = expired > 0 or synced is None \
             or self._clock.now() - synced >= INDEX_STALE_AFTER
         if missing:
@@ -321,29 +327,36 @@ class JuniperRecords:
                         "unavailable until a later scan", len(missing), len(self.ids))
             return False
         self.complete = True
+        self.evo_complete = no_evo == 0
+        if not self.evo_complete:
+            log.warning("Juniper CVE records: %d of %d kept without their Junos OS Evolved "
+                        "blocks; Evolved devices left unavailable until a later scan",
+                        no_evo, len(self.records))
         return True
 
     # -- one device --------------------------------------------------------
 
-    def assess(self, v: "junos.Release", model: Optional[str]) -> tuple:
+    def assess(self, v: "junos.Release", model: Optional[str], evolved: bool = False) -> tuple:
         """``(affected, undecided)`` for a device running ``v``: the published
-        records whose Junos OS blocks give AFFECTED, and the ids they leave
-        UNDECIDED, both sorted by id. Devices on the same release and model
-        share one assessment: the records do not change after :meth:`prepare`."""
-        key = (v, model or "")
+        records whose Junos OS blocks (Junos OS Evolved blocks with
+        ``evolved``) give AFFECTED, and the ids they leave UNDECIDED, both
+        sorted by id. Devices on the same release and model share one
+        assessment: the records do not change after :meth:`prepare`."""
+        key = (v, model or "", evolved)
         if key not in self._assessed:
-            self._assessed[key] = self._assess(v, model or "")
+            self._assessed[key] = self._assess(v, model or "", evolved)
         affected, undecided = self._assessed[key]
         return list(affected), list(undecided)
 
-    def _assess(self, v: "junos.Release", model: str) -> tuple:
+    def _assess(self, v: "junos.Release", model: str, evolved: bool = False) -> tuple:
+        field = "evo_blocks" if evolved else "blocks"
         affected, undecided = [], []
         for cve_id in sorted(self.records):
             record = self.records[cve_id]
             if record.get("state") != "PUBLISHED":
                 continue
             try:
-                status, _ = junos.decide(record.get("blocks") or [], v, model or "")
+                status, _ = junos.decide(record.get(field) or [], v, model or "", evolved)
             except (ValueError, TypeError, AttributeError, KeyError, IndexError):
                 status = junos.UNDECIDED       # a block this module cannot read: no claim
             if status == junos.AFFECTED:
@@ -354,5 +367,6 @@ class JuniperRecords:
 
     def block(self) -> dict:
         """The stage's ``juniper`` stats object."""
-        return {"complete": self.complete, "stale": self.stale, "reason": self.reason,
+        return {"complete": self.complete, "evo_complete": self.evo_complete,
+                "stale": self.stale, "reason": self.reason,
                 **self.stats}

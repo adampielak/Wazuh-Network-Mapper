@@ -229,15 +229,29 @@ family and firmware into a CPE, NVD's standard product name, e.g.
 | Cisco ASA | `a:cisco:adaptive_security_appliance_software` |
 | Fortinet FortiOS | `o:fortinet:fortios` |
 | Juniper Junos | `o:juniper:junos:<train>:<update>`, e.g. `o:juniper:junos:20.2:r2-s3` (decided from Juniper's own records, see below) |
+| Juniper Junos OS Evolved (`-EVO` releases) | `o:juniper:junos_os_evolved:<train>:<update>` (decided from the Evolved blocks of Juniper's records) |
+| ArubaOS-Switch 16.x | `o:hpe:arubaos-switch:<version>` and `o:arubanetworks:<line>_firmware:<version>`, both asked, answers merged |
 | HP Comware | none: NVD has no Comware product, only some Comware 7 part numbers |
+| HP ProCurve (before ArubaOS-Switch 16) | none: the dictionary writes releases with train letters and NVD compares them as strings |
+| Brocade Network OS, DCN, IBM Networking OS, HP GbE2c | none: no product in the CPE dictionary fits |
 | Cisco IOS XR | none yet (recognised, so never taken for IOS) |
+
+A family with no CPE and no keyword rule is still identified: the device gets
+`match: none` and is `unverified` with `reason: no_cpe_rule`, so the map says
+which software it runs and that its CVEs are not looked up.
 
 The CPE is first looked up in NVD's CPE dictionary: NVD answers a version it
 has never listed with every CVE whose range happens to include it, so a CPE the
 dictionary lacks is "unverified" and not asked. A listed CPE is asked for the
 CVEs where that software is the vulnerable component (`isVulnerable`).
-FortiOS skips the dictionary check: NVD evaluates the version ranges of a
-well-formed FortiOS name even for a release the dictionary does not list.
+How the dictionary is checked is set per family (`listed` in the rule table):
+the exact release by default; for ArubaOS-Switch only the product, since its
+dictionary lists some releases while NVD evaluates the version ranges of any
+well-formed name; FortiOS skips the check for the same reason. ArubaOS-Switch
+is asked under both its names because each lists CVEs the other does not; a
+model that names no product line (only a part number) cannot be asked under
+the per-model name, so the device is `unverified` (`reason: model_not_mapped`)
+rather than reported with part of its CVEs.
 
 **Junos.** NVD does not answer Junos well: its applicability data for Junos
 lags Juniper's advisories and lists only some releases. The CPE name is built
@@ -284,6 +298,10 @@ from a complete set (an index and an entry for every id in it); anything less
 leaves them `unavailable` with a `juniper_records_unavailable` warning, never
 a partial `ok`, and the next scan fills the gaps. A firmware string that is
 not a regular release is `unverified` (`reason: version_not_comparable`).
+A Junos OS Evolved device (`22.2R3-S1-EVO`) is decided the same way from
+the records' Junos OS Evolved blocks only. Records cached before those blocks
+were kept are fetched again, and Evolved devices stay `unavailable` until
+every record carries them (`juniper.evo_complete`).
 `cve_lookup.source` is `juniper-cna+nvd` for these devices and `nvd` for every
 other.
 
@@ -316,6 +334,8 @@ scores them.
 | device not polled | `unidentified` | null |
 | Junos, Juniper records not all fetched yet | `unavailable` | null |
 | Junos, firmware not a regular release | `unverified` | null |
+| family known, no NVD product fits it | `unverified`, `match: none` | null |
+| ArubaOS-Switch, model line not known | `unverified` | null |
 
 An empty list means "asked precisely, and NVD has nothing"; a failed, guessed
 or skipped lookup never gives it. Either way OVSS calls the device Unassessed,

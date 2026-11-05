@@ -15,6 +15,13 @@ releases are totally ordered by (major, minor, R, S, build). Special trains
 release, so entries about them do not apply to a device running a regular
 release, and the other way round.
 
+Junos OS Evolved has its own blocks in the records (product "Junos OS
+Evolved") and the same release notation with ``-EVO`` appended
+(``22.2R3-S1-EVO``). A device running Evolved is decided from those blocks
+only (:func:`evo_blocks`, :func:`decide` with ``evolved=True``): the suffix is
+dropped from every version string and the regular rules apply. Evolved special
+trains (``23.4X100-D20-EVO``) stay separate branches.
+
 A record entry is a range ``[version, lessThan)`` (or ``lessThanOrEqual``)
 with a status, optionally with ``changes``. Some records use ``changes`` as a
 timeline over one train instead: ``status`` holds from the train's start, flips
@@ -64,7 +71,8 @@ _TRAIN_R = re.compile(r"^(\d+)\.(\d+)R$")                    # "12.3R": the trai
 _TRAIN_END = re.compile(r"^(\d+)\.(\d+|\*)\*?$")             # "20.2*", "21.*"
 _OTHER = re.compile(r"^\d+\.\d+(?:X\d+(?:-D\d+)?(?:\.\d+)?|F\d*(?:-S\d+)?(?:-J\d+)?(?:\.\d+)?)\*?$"
                     r"|^\d+\.\d+(?:R\d+(?:-S\d+)?(?:\.\d+)?)?-EVO\*?$", re.I)
-_DEVICE = re.compile(r"^(?:JUNOS\s+)?(\d+)\.(\d+)R(\d+)(?:-S(\d+))?(?:\.(\d+))?\s*$", re.I)
+_DEVICE = re.compile(r"^(?:JUNOS\s+)?(\d+)\.(\d+)R(\d+)(?:-S(\d+))?(?:\.(\d+))?(-EVO)?\s*$", re.I)
+_EVO = re.compile(r"-EVO\b", re.I)
 
 
 @dataclass(frozen=True)
@@ -89,10 +97,18 @@ class Unparsed(Exception):
     """A version statement this module does not understand."""
 
 
-def parse_device(firmware: str) -> Optional[Release]:
-    """"JUNOS 22.4R3-S1.6" -> Release(22, 4, 3, 1, 6); None when not a regular release."""
+def is_evolved(firmware: str) -> bool:
+    """Whether a release string is Junos OS Evolved ("22.2R3-S1.2-EVO")."""
     m = _DEVICE.match(firmware or "")
-    if not m:
+    return bool(m and m.group(6))
+
+
+def parse_device(firmware: str, evolved: bool = False) -> Optional[Release]:
+    """"JUNOS 22.4R3-S1.6" -> Release(22, 4, 3, 1, 6); None when not a regular
+    release. With ``evolved``, only an Evolved release ("22.2R3-S1.2-EVO") is
+    parsed; without it, an Evolved release gives None."""
+    m = _DEVICE.match(firmware or "")
+    if not m or bool(m.group(6)) != evolved:
         return None
     return Release(int(m.group(1)), int(m.group(2)), int(m.group(3)),
                    int(m.group(4) or 0), int(m.group(5)) if m.group(5) else None)
@@ -442,12 +458,43 @@ def platform_matches(model: str, texts: list) -> bool:
 
 # -- records ----------------------------------------------------------------
 
-def is_junos_block(block: dict) -> bool:
+def _product(block: dict) -> Optional[str]:
+    """A Juniper block's product name, lower case; None for another vendor."""
     vendor = str(block.get("vendor") or "").strip().lower()
-    product = re.sub(r"\s+", " ", str(block.get("product") or "")).strip().lower()
     if not vendor.startswith("juniper"):
+        return None
+    return re.sub(r"\s+", " ", str(block.get("product") or "")).strip().lower()
+
+
+def is_junos_block(block: dict) -> bool:
+    product = _product(block)
+    if product is None:
         return False
     return product == "junos" or (product.startswith("junos os") and "evolved" not in product)
+
+
+def is_evolved_block(block: dict) -> bool:
+    product = _product(block)
+    return product is not None and product.startswith("junos os evolved")
+
+
+def _strip_evo(value):
+    return _EVO.sub("", value) if isinstance(value, str) else value
+
+
+def _as_regular(block: dict) -> dict:
+    """An Evolved block with ``-EVO`` dropped from its version strings."""
+    versions = []
+    for raw in block.get("versions") or []:
+        if not isinstance(raw, dict):
+            versions.append(raw)
+            continue
+        entry = {k: _strip_evo(v) for k, v in raw.items()}
+        if isinstance(raw.get("changes"), list):
+            entry["changes"] = [{**c, "at": _strip_evo(c.get("at"))} if isinstance(c, dict) else c
+                                for c in raw["changes"]]
+        versions.append(entry)
+    return {**block, "versions": versions}
 
 
 def _named_trains(entries: list) -> set:
@@ -527,13 +574,23 @@ def junos_blocks(affected) -> list:
         if isinstance(affected, list) else []
 
 
-def decide(blocks: list, v: Release, model: str) -> tuple:
+def evo_blocks(affected) -> list:
+    """The Junos OS Evolved blocks of a record's ``containers.cna.affected``, as
+    stated (``-EVO`` is dropped when they are decided)."""
+    return [b for b in affected if isinstance(b, dict) and is_evolved_block(b)] \
+        if isinstance(affected, list) else []
+
+
+def decide(blocks: list, v: Release, model: str, evolved: bool = False) -> tuple:
     """``(status, why)`` the Junos OS ``blocks`` of one record give a device
     running ``v`` (:func:`parse_device`): AFFECTED, UNAFFECTED or UNDECIDED, or
     ``(None, None)`` when there are no blocks. ``why`` names the rule that
-    decided, or None."""
+    decided, or None. ``evolved``: ``blocks`` are Evolved blocks
+    (:func:`evo_blocks`) and ``v`` an Evolved release."""
     if not blocks:
         return None, None
+    if evolved:
+        blocks = [_as_regular(b) for b in blocks]
     named = frozenset(_record_trains(blocks, model or ""))
     results = [block_status(v, b, model or "", named) for b in blocks]
     for want in (AFFECTED, UNDECIDED, UNAFFECTED):

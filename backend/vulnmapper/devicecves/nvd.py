@@ -180,7 +180,8 @@ class NvdClient:
         return items
 
     def cpe_listed(self, cpe: str) -> bool:
-        """Whether NVD's CPE dictionary lists this exact name (a non-deprecated entry)."""
+        """Whether NVD's CPE dictionary lists this name (a non-deprecated entry);
+        for a name with ``*`` components, any name it matches."""
         products = self._paged(CPES_URL, [("cpeMatchString", cpe)], "products")
         return any(not (p.get("cpe") or {}).get("deprecated") for p in products)
 

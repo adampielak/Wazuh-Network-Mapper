@@ -114,6 +114,17 @@ describe('unscoredReason', () => {
     );
   });
 
+  it('says why an identified device was not looked up', () => {
+    expect(
+      unscoredReason(dev(at({ status: 'unverified', reason: 'no_cpe_rule', match: 'none', cpe: null, product: 'Brocade Network OS 7.2.0a' })))
+    ).toBe('Brocade Network OS 7.2.0a is identified, but NVD has no product name that fits it, so its CVEs are not looked up.');
+    expect(
+      unscoredReason(dev(at({ status: 'unverified', reason: 'model_not_mapped', product: 'ArubaOS-Switch 16.04.0024' })))
+    ).toBe(
+      'NVD files part of the CVEs for ArubaOS-Switch 16.04.0024 under the switch model, and this model is not known, so the lookup would be incomplete.'
+    );
+  });
+
   it('explains an older graph', () => {
     expect(unscoredReason(dev(undefined))).toBe(
       'This graph has no CVE lookup for devices; the next scan adds one.'

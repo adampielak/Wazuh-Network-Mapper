@@ -25,6 +25,8 @@ SOURCE = juniper.SOURCE_ID
 IDS = ["CVE-2021-31353", "CVE-2022-22210", "CVE-2023-28985"]
 JUNOS_FW = "JUNOS 20.2R2-S3.4"
 JUNOS_CPE = "cpe:2.3:o:juniper:junos:20.2:r2-s3:*:*:*:*:*:*"
+EVO_FW = "JUNOS 21.1R1-S1.2-EVO"
+EVO_CPE = "cpe:2.3:o:juniper:junos_os_evolved:21.1:r1-s1:*:*:*:*:*:*"
 
 
 def nvd_index(*ids):
@@ -96,8 +98,9 @@ class TestTrimRecord(unittest.TestCase):
         self.assertEqual((r["id"], r["state"]), ("CVE-2021-31353", "PUBLISHED"))
         self.assertEqual(r["descriptions"][0]["lang"], "en")
         self.assertTrue(r["references"][0]["url"].startswith("https://"))
-        # Junos OS only, the Junos OS Evolved block is left out
+        # Junos OS and Junos OS Evolved blocks are kept apart
         self.assertEqual([b["product"] for b in r["blocks"]], ["Junos OS"])
+        self.assertEqual([b["product"] for b in r["evo_blocks"]], ["Junos OS Evolved"])
         (key,) = r["metrics"]
         self.assertIn(key, ("cvssMetricV31", "cvssMetricV30", "cvssMetricV40"))
         entry = r["metrics"][key][0]
@@ -228,6 +231,35 @@ class TestPrepare(Base):
         self.assertTrue(jr.stale)
         self.assertIn(IDS[0], self.index_entry()["changed"])
 
+    def strip_evo_blocks(self):
+        """The cache as an older release kept it: records without evo_blocks."""
+        with open(self.path, encoding="utf-8") as f:
+            doc = json.load(f)
+        for cve_id in IDS:
+            doc["entries"][cve_id]["data"].pop("evo_blocks", None)
+        with open(self.path, "w", encoding="utf-8") as f:
+            json.dump(doc, f)
+
+    def test_records_kept_without_evolved_blocks_are_fetched_again(self):
+        self.records().prepare()
+        self.strip_evo_blocks()
+        self.cveorg.calls.clear()
+        jr = self.records()
+        self.assertTrue(jr.prepare())
+        self.assertEqual(sorted(self.cveorg.calls), IDS)
+        self.assertEqual((jr.complete, jr.evo_complete, jr.stats["evo_pending"]), (True, True, 0))
+        self.assertEqual(len(jr.records[IDS[0]]["evo_blocks"]), 1)
+
+    def test_evolved_blocks_not_fetched_again_leave_the_set_incomplete_for_evolved(self):
+        self.records().prepare()
+        self.strip_evo_blocks()
+        self.cveorg.script = {i: "down" for i in IDS}
+        jr = self.records()
+        self.assertTrue(jr.prepare())
+        self.assertEqual((jr.complete, jr.evo_complete), (True, False))
+        self.assertEqual(jr.block()["evo_complete"], False)
+        self.assertGreater(jr.stats["evo_pending"], 0)
+
     def test_full_sync_after_119_days(self):
         self.records().prepare()
         self.clock.advance(days=120)
@@ -278,7 +310,8 @@ class TestPrepare(Base):
 def junos_node(firmware=JUNOS_FW, model="mx204", node_id="device:00:00:5e:00:53:01"):
     return {"node_id": node_id, "kind": "device", "pollable": True, "status": "online",
             "vendor": "Juniper Networks", "model": model, "firmware": firmware,
-            "software_family": "juniper_junos", "risk_score": 0, "max_cvss": None}
+            "software_family": "juniper_junos_evolved" if firmware.endswith("-EVO") else "juniper_junos",
+            "risk_score": 0, "max_cvss": None}
 
 
 def nvd_hit(cve_id, *metrics_, criteria=None, status="Analyzed", **match):
@@ -351,6 +384,33 @@ class TestJunosLookup(Base):
         result, _ = self.junos()
         self.assertEqual(result.status, "ok")
         self.assertTrue(result.stale)
+
+    def test_evolved_device_decided_from_the_evolved_blocks(self):
+        fake = FakeNvd(cves={EVO_CPE: [
+            nvd_hit("CVE-2016-0003", metric("3.1", 6.1, severity="MEDIUM"),
+                    criteria="cpe:2.3:o:juniper:junos_os_evolved:*:*:*:*:*:*:*:*",
+                    versionEndExcluding="22.1"),                     # bounded: kept
+            nvd_hit("CVE-2016-0004", criteria="cpe:2.3:o:juniper:junos:*:*:*:*:*:*:*:*",
+                    versionEndExcluding="22.1")]},                   # another product: dropped
+            clock=self.clock)
+        client = nvd.NvdClient(transport=fake, clock=self.clock, api_key="k", use_env_key=False)
+        ident = self.ident(EVO_FW, "ptx10008")
+        self.assertEqual((ident["family"], ident["cpe"]), ("juniper_junos_evolved", EVO_CPE))
+        result = lookup(ident, client, Cache(None, self.clock), self.records(), "ptx10008")
+        self.assertEqual((result.status, result.source), ("ok", SOURCE_JUNIPER))
+        # CVE-2021-31353's Evolved block: 21.1 before 21.1R2
+        self.assertEqual(sorted(r["cve"] for r in result.rows), ["CVE-2016-0003", IDS[0]])
+
+    def test_evolved_device_unavailable_without_every_evolved_block(self):
+        self.records().prepare()
+        TestPrepare.strip_evo_blocks(self)
+        self.cveorg.script = {i: "down" for i in IDS}
+        result, _ = self.junos(firmware=EVO_FW, model="ptx10008")
+        self.assertEqual((result.status, result.reason), ("unavailable", "juniper_records_incomplete"))
+        # a Junos OS device is still answered
+        self.cveorg.script = {i: "down" for i in IDS}
+        result, _ = self.junos()
+        self.assertEqual(result.status, "ok")
 
     def test_without_juniper_records_nvd_alone_answers(self):
         fake = FakeNvd(cves={JUNOS_CPE: []}, dictionary={JUNOS_CPE: [

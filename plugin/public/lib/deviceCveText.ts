@@ -82,6 +82,12 @@ export function unscoredReason(node: {
       if (l.reason === 'version_not_comparable') {
         return `${l.product || 'This release'} is not a regular Junos release, so it cannot be compared with Juniper's CVE records.`;
       }
+      if (l.reason === 'no_cpe_rule') {
+        return `${l.product || 'This software'} is identified, but NVD has no product name that fits it, so its CVEs are not looked up.`;
+      }
+      if (l.reason === 'model_not_mapped') {
+        return `NVD files part of the CVEs for ${l.product || 'this software'} under the switch model, and this model is not known, so the lookup would be incomplete.`;
+      }
       return `NVD does not list ${l.product || 'this software version'}, so the lookup could not be confirmed.`;
     case 'ok':
       if (l.match === 'keyword' && !l.total) {

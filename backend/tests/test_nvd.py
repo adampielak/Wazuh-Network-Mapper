@@ -601,6 +601,71 @@ class TestLookupById(Base):
         self.assertEqual((e.exception.reason, len(fake.calls)), ("budget", 2))
 
 
+AOS_CPE = "cpe:2.3:o:hpe:arubaos-switch:16.04.0024:*:*:*:*:*:*:*"
+AOS_MODEL_CPE = "cpe:2.3:o:arubanetworks:2620_firmware:16.04.0024:*:*:*:*:*:*:*"
+AOS_PRODUCT = "cpe:2.3:o:hpe:arubaos-switch:*:*:*:*:*:*:*:*"
+AOS_MODEL_PRODUCT = "cpe:2.3:o:arubanetworks:2620_firmware:*:*:*:*:*:*:*:*"
+
+
+def device(**node):
+    return families.identify({"kind": "device", "pollable": True, **node})
+
+
+class TestFamilyRules(Base):
+    """How a family's rule shapes the lookup: no CPE rule, the dictionary
+    check (per release, per product, none) and a second NVD name."""
+
+    def client(self, fake):
+        return nvd.NvdClient(transport=fake, clock=self.clock, api_key="k", use_env_key=False)
+
+    def aruba(self, model="Aruba 2620-48"):
+        return device(vendor="HP", model=model, firmware="KA.16.04.0024",
+                      software_family="hp_arubaos_switch")
+
+    def test_family_without_a_cpe_rule_is_not_looked_up(self):
+        fake = self.nvd()
+        result = lookup(device(vendor="Brocade", firmware="7.2.0a", software_family="brocade_nos"),
+                        self.client(fake), Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason, result.match, result.rows),
+                         ("unverified", "no_cpe_rule", "none", None))
+        self.assertEqual(fake.calls, [])
+
+    def test_arubaos_switch_unions_both_names(self):
+        fake = self.nvd(
+            cves={AOS_CPE: [record("CVE-2023-0001", metric("3.1", 7.5)),
+                            record("CVE-2023-0002", metric("3.1", 5.0))],
+                  AOS_MODEL_CPE: [record("CVE-2022-0001", metric("3.1", 8.8)),
+                                  record("CVE-2023-0002", metric("3.1", 5.0))]},
+            dictionary={AOS_PRODUCT: listed("cpe:2.3:o:hpe:arubaos-switch:16.11:*:*:*:*:*:*:*"),
+                        AOS_MODEL_PRODUCT: listed("cpe:2.3:o:arubanetworks:2620_firmware:-:*:*:*:*:*:*:*")})
+        result = lookup(self.aruba(), self.client(fake), Cache(None, self.clock))
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(sorted(r["cve"] for r in result.rows),
+                         ["CVE-2022-0001", "CVE-2023-0001", "CVE-2023-0002"])
+        # the dictionary is asked per product (any release), the CVEs per release
+        probes = [c["params"]["cpeMatchString"] for c in fake.calls if c["path"].endswith("/cpes/2.0")]
+        names = [c["params"]["cpeName"] for c in fake.calls if "cpeName" in c["params"]]
+        self.assertEqual((probes, names), ([AOS_PRODUCT, AOS_MODEL_PRODUCT], [AOS_CPE, AOS_MODEL_CPE]))
+
+    def test_arubaos_switch_second_name_unknown_to_nvd(self):
+        fake = self.nvd(cves={AOS_CPE: []}, dictionary={AOS_PRODUCT: listed(AOS_CPE)})
+        result = lookup(self.aruba(), self.client(fake), Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason), ("unverified", "not_in_dictionary"))
+
+    def test_arubaos_switch_without_a_product_line(self):
+        fake = self.nvd()
+        result = lookup(self.aruba(model="J0000A"), self.client(fake), Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason), ("unverified", "model_not_mapped"))
+        self.assertEqual(fake.calls, [])
+
+    def test_fortios_skips_the_dictionary(self):
+        fake = self.nvd(cves={FORTIOS_CPE: []}, dictionary={})
+        result = lookup(device(vendor="Fortinet", firmware="6.0.16", software_family="fortinet_fortios"),
+                        self.client(fake), Cache(None, self.clock))
+        self.assertEqual(result.status, "ok")
+        self.assertEqual([c["path"].rsplit("/", 2)[-2] for c in fake.calls], ["cves"])
+
+
 
 class TestErrorBase(unittest.TestCase):
     def test_every_scanner_error_shares_one_base(self):

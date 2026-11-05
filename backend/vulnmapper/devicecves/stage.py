@@ -35,7 +35,8 @@ log = logging.getLogger("vulnmapper.devicecves")
 #   ``cve_summary``, ``top_cves``, ``max_cvss``, and
 #   ``cve_lookup``: {status, match, product, cpe, source, fetched_at, stale, total}
 #   (``reason`` when the status is not ok and the lookup said why, e.g.
-#   "not_in_dictionary", "juniper_records_incomplete", "version_not_comparable";
+#   "not_in_dictionary", "juniper_records_incomplete", "version_not_comparable",
+#   "no_cpe_rule", "model_not_mapped";
 #   Junos also ``undecided``: CVE ids whose records make no claim for its release)
 #
 # How the lookup's status maps to the findings:
@@ -50,6 +51,8 @@ log = logging.getLogger("vulnmapper.devicecves")
 #   device not polled                     unidentified          null
 #   Junos, Juniper records incomplete     unavailable           null
 #   Junos, firmware not a regular release unverified            null
+#   family known, no fitting NVD name     unverified, match none null
+#   ArubaOS-Switch, model line not known  unverified            null
 #
 # Junos devices are decided from Juniper's own CVE records plus NVD's hits for
 # the CVEs Juniper did not assign (source "juniper-cna+nvd", see lookup.py);

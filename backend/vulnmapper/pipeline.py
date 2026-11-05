@@ -59,6 +59,7 @@ class ScanContext:
         # built by the OVSS stage, used again by the attack path stage
         self.engine = None
         self._records = None
+        self._juniper = None
 
         self.endpoints: list[dict] = []
         self.network_doc: dict = {"nodes": [], "edges": []}
@@ -121,6 +122,24 @@ class ScanContext:
                                    budget_s=self.args.nvd_budget or DEFAULT_BUDGET_S),
                          Cache(self.nvd_cache_path(), self.clock))
         return self._nvd
+
+    def juniper(self):
+        """The scan's Juniper CNA records (juniper-cna.json beside nvd-cache.json),
+        made on first use; nothing is fetched until a Junos device is looked up.
+        The index has its own NVD client (same transport and clock, its own
+        budget), so it never spends the device lookups' budget."""
+        if self._juniper is None:
+            from .devicecves.juniper import JuniperRecords, default_path, records_cache
+            from .devicecves.juniper import INDEX_BUDGET_S
+            from .devicecves.nvd import NvdClient
+
+            path = self.nvd_cache_path()
+            self._juniper = JuniperRecords(
+                records_cache(default_path(path) if path else None, self.clock), self.clock,
+                lambda: NvdClient(transport=self._nvd_transport, clock=self.clock,
+                                  budget_s=INDEX_BUDGET_S),
+                self.threat_transport)
+        return self._juniper
 
     def records(self):
         """The scan's CVE records (cve-records.json), made on first use."""

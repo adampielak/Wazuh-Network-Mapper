@@ -99,8 +99,12 @@ def detect_family(vendor: Optional[str], sys_descr: Optional[str],
 _CLASSIC_IOS = re.compile(r"^\d+\.\d+\(\d+[a-z]?\)[A-Z]+[A-Z0-9]*[a-z]?$")
 
 
-# Junos "JUNOS 19.4R3-S1": train 19.4, update r3-s1 (NVD CPE juniper:junos:19.4:r3-s1)
-_JUNOS = re.compile(r"^JUNOS\s+(\d+\.\d+)(R\d+(?:-S\d+(?:\.\d+)?)?)\s*$", re.I)
+# Junos "JUNOS 19.4R3-S1.3": train 19.4, update r3-s1, build 3. NVD's CPE
+# is juniper:junos:19.4:r3-s1, without the build: the CPE dictionary lists
+# Junos releases without one, and NVD returns fewer CVEs for a name with
+# the build (175 against 295 for 20.2R2-S3, November 2026). The name has 13
+# components; NVD answers HTTP 404 ("Invalid cpeName parameter") for 14.
+_JUNOS = re.compile(r"^JUNOS\s+(\d+\.\d+)(R\d+(?:-S\d+)?)(?:\.\d+)?\s*$", re.I)
 
 
 def family_of(node: dict) -> Optional[str]:
@@ -177,7 +181,7 @@ def identify(node: dict) -> dict:
         part, vendor, product = entry["cpe"]
         jm = _JUNOS.match(firmware) if family == "juniper_junos" else None
         if jm:
-            out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{jm.group(1)}:{jm.group(2).lower()}:*:*:*:*:*:*:*"
+            out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{jm.group(1)}:{jm.group(2).lower()}:*:*:*:*:*:*"
             out["match"] = "cpe"
             return out
         out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{cpe_value(firmware)}:*:*:*:*:*:*:*"

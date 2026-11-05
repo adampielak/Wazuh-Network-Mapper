@@ -11,6 +11,7 @@ from typing import Optional
 from ..common import VulnmapperError
 from .cache import INVALID_QUERY, Cache, trim_cve
 from .families import keyword_accepts
+from . import junos
 from .nvd import (NvdBudgetExceeded, NvdClient, NvdInvalidQuery, NvdUnavailable,
                   is_rejected, parse_cve)
 
@@ -26,11 +27,26 @@ from .nvd import (NvdBudgetExceeded, NvdClient, NvdInvalidQuery, NvdUnavailable,
 #   * ``unidentified`` vendor, family or version missing, or never polled
 #
 # An expired cache entry is used when NVD cannot be reached; ``stale`` says so.
+#
+# Junos (with a JuniperRecords source passed in) is decided from Juniper's own
+# CVE records (vulnmapper.devicecves.juniper), compared release by release
+# (vulnmapper.devicecves.junos), plus the NVD cpeName hits for CVEs Juniper did
+# not assign (most from before Juniper became a CNA) whose Junos criterion is
+# bounded: a bare ``junos:*`` with no version range claims every release ever
+# and is not counted. ``source`` is then "juniper-cna+nvd" and ``undecided``
+# lists the CVEs whose records make no claim for the device's release. A
+# firmware string that is not a regular release (``<major>.<minor>R<n>[-S<n>][.<build>]``) is
+# ``unverified`` (``version_not_comparable``); an incomplete set of Juniper
+# records makes the device ``unavailable``, never a partial ``ok``.
 
 STATUS_OK = "ok"
 STATUS_UNVERIFIED = "unverified"
 STATUS_UNAVAILABLE = "unavailable"
 STATUS_UNIDENTIFIED = "unidentified"
+
+SOURCE_NVD = "nvd"
+SOURCE_JUNIPER = "juniper-cna+nvd"
+JUNOS_FAMILY = "juniper_junos"
 
 # Sent with every CPE query: only CVEs where the device's software is the
 # vulnerable component, not merely the platform it runs on.
@@ -49,6 +65,8 @@ class Lookup:
     from_cache: bool = False             # every answer came from the cache
     reason: Optional[str] = None         # unreachable | budget | not_in_dictionary | invalid_query
     queries: list = field(default_factory=list)
+    source: str = SOURCE_NVD
+    undecided: Optional[list] = None     # Junos: CVE ids the records make no claim on
 
 
 class Unanswered(VulnmapperError):
@@ -104,13 +122,88 @@ def _valid(entry: dict) -> dict:
     return entry
 
 
-def lookup(ident: dict, client: NvdClient, cache: Cache) -> Lookup:
-    """Look one identified device up. ``ident`` is :func:`families.identify`'s result."""
+def _junos_bounded(cve: dict) -> bool:
+    """Whether a vulnerable Junos criterion of an NVD record names a version or
+    a version range (a bare ``cpe:2.3:o:juniper:junos:*`` does neither)."""
+    for config in cve.get("configurations") or []:
+        for node in (config or {}).get("nodes") or []:
+            for m in (node or {}).get("cpeMatch") or []:
+                parts = str((m or {}).get("criteria") or "").split(":")
+                if len(parts) < 6 or parts[3:5] != ["juniper", "junos"] or not m.get("vulnerable"):
+                    continue
+                if parts[5] not in ("*", "-") or any(m.get(k) for k in (
+                        "versionStartIncluding", "versionStartExcluding",
+                        "versionEndIncluding", "versionEndExcluding")):
+                    return True
+    return False
+
+
+def _junos_trim(cve: dict) -> dict:
+    """An NVD hit for a Junos CPE, trimmed, with the bounded-criterion flag."""
+    return {**trim_cve(cve), "junos_bounded": _junos_bounded(cve)}
+
+
+def _lookup_junos(ident: dict, client: NvdClient, cache: Cache, juniper, model: Optional[str],
+                  result: Lookup) -> Lookup:
+    result.source = SOURCE_JUNIPER
+    package, version = ident.get("product"), ident.get("version")
+    v = junos.parse_device(version or "")
+    if v is None:
+        result.status, result.reason = STATUS_UNVERIFIED, "version_not_comparable"
+        return result
+    complete = juniper.prepare()
+    if juniper.stats.get("requests") or juniper.stats.get("index_requests"):
+        result.from_cache = False
+    if not complete:
+        result.status, result.reason = STATUS_UNAVAILABLE, juniper.reason
+        return result
+    cpe = ident["cpe"]
+    try:
+        answer = _answer(cache, f"junos-cves:{cpe}",
+                         lambda: [_junos_trim(c) for c in client.cves_for_cpe(cpe, IS_VULNERABLE)],
+                         _answered, result)
+    except Unanswered as e:
+        result.status, result.reason = STATUS_UNAVAILABLE, e.reason
+        return result
+    except NvdInvalidQuery:
+        result.status, result.reason = STATUS_UNVERIFIED, "invalid_query"
+        return result
+    nvd_by_id = {c.get("id"): c for c in answer["data"] if isinstance(c, dict)}
+    affected, undecided = juniper.assess(v, model)
+    rows = []
+    for record in affected:
+        cve = record
+        if not record.get("metrics") and (nvd_by_id.get(record["id"]) or {}).get("metrics"):
+            # no CNA score in the record: NVD's own, from the same answer
+            cve = {**record, "metrics": nvd_by_id[record["id"]]["metrics"]}
+        rows.append(parse_cve(cve, package=package, version=version,
+                              detected_at=juniper.fetched_at.get(record["id"])))
+    known = set(juniper.ids)
+    for cve in answer["data"]:
+        if cve.get("id") in known or not cve.get("junos_bounded") or is_rejected(cve):
+            continue
+        rows.append(parse_cve(cve, package=package, version=version,
+                              detected_at=answer["fetched_at"]))
+    result.status = STATUS_OK
+    result.fetched_at = answer["fetched_at"]
+    result.stale = result.stale or juniper.stale
+    result.rows = rows
+    result.undecided = undecided
+    return result
+
+
+def lookup(ident: dict, client: NvdClient, cache: Cache, juniper=None,
+           model: Optional[str] = None) -> Lookup:
+    """Look one identified device up. ``ident`` is :func:`families.identify`'s result;
+    ``juniper`` (a :class:`~vulnmapper.devicecves.juniper.JuniperRecords`) decides Junos
+    devices, whose ``model`` places them among a record's platforms."""
     result = Lookup(status=STATUS_UNIDENTIFIED, match=None, product=ident.get("product"),
                     cpe=ident.get("cpe"), from_cache=True)
     if ident.get("match") not in ("cpe", "keyword"):
         return result
     result.match = ident["match"]
+    if juniper is not None and ident.get("family") == JUNOS_FAMILY and ident["match"] == "cpe":
+        return _lookup_junos(ident, client, cache, juniper, model, result)
     package, version = ident.get("product"), ident.get("version")
     try:
         if ident["match"] == "cpe":

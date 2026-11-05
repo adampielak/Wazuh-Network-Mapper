@@ -115,6 +115,20 @@ class TestCpe(unittest.TestCase):
         self.assertEqual(r["cpe"], "cpe:2.3:o:fortinet:fortios:6.0.16:*:*:*:*:*:*:*")
         self.assertEqual(r["product"], "Fortinet FortiOS 6.0.16")
 
+    def test_junos_cpe_has_thirteen_components_and_no_build(self):
+        # NVD answers HTTP 404 for a cpeName with a build component added
+        for firmware, cpe in (
+                ("JUNOS 22.4R3-S1.6", "cpe:2.3:o:juniper:junos:22.4:r3-s1:*:*:*:*:*:*"),
+                ("JUNOS 15.1R6-S4", "cpe:2.3:o:juniper:junos:15.1:r6-s4:*:*:*:*:*:*"),
+                ("JUNOS 21.4R3.5", "cpe:2.3:o:juniper:junos:21.4:r3:*:*:*:*:*:*")):
+            with self.subTest(firmware=firmware):
+                r = self.ident(vendor="Juniper", firmware=firmware)
+                self.assertEqual(r["family"], "juniper_junos")
+                self.assertEqual(r["cpe"], cpe)
+                self.assertEqual(len(r["cpe"].split(":")), 13)
+                self.assertEqual((r["product"], r["version"], r["match"]),
+                                 (f"Juniper Junos {firmware}", firmware, "cpe"))
+
     def test_comware_has_no_cpe_rule_only_the_keyword_fallback(self):
         r = self.ident(vendor="HP", model="HP 1920-48G", firmware="5.20.99 Release 1107",
                        software_family="hp_comware")

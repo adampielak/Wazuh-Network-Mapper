@@ -91,7 +91,7 @@ class FakeNvd:
             key = "products"
         else:
             items = self.cves.get(params.get("cpeName") or params.get("keywordSearch")
-                                  or params.get("cveId"), [])
+                                  or params.get("cveId") or params.get("sourceIdentifier"), [])
             key = "vulnerabilities"
         page = items[start:start + size]
         return 200, {"resultsPerPage": len(page), "startIndex": start,
@@ -319,6 +319,39 @@ class TestQueries(Base):
         self.assertEqual((result.status, result.match, result.rows), ("ok", "keyword", []))
         self.assertEqual(fake.calls[0]["params"]["keywordSearch"], "1920")
         self.assertIn("noRejected", fake.calls[0]["flags"])
+
+
+class TestSourceIndex(Base):
+    def ids(self, fake, **kw):
+        client = nvd.NvdClient(transport=fake, clock=self.clock, api_key="k",
+                               use_env_key=False)
+        return client.cve_ids_for_source("sirt@juniper.net", **kw), client
+
+    def test_full_index_pages_and_keeps_order_without_duplicates(self):
+        items = [record(f"CVE-2024-{n:04d}") for n in range(5)] + [record("CVE-2024-0001")]
+        fake = self.nvd(cves={"sirt@juniper.net": items}, page=2)
+        ids, client = self.ids(fake)
+        self.assertEqual(ids, [f"CVE-2024-{n:04d}" for n in range(5)])
+        self.assertEqual([int(c["params"]["startIndex"]) for c in fake.calls], [0, 2, 4])
+        self.assertEqual(client.requests, 3)
+        for c in fake.calls:
+            self.assertEqual(c["params"]["sourceIdentifier"], "sirt@juniper.net")
+            self.assertNotIn("lastModStartDate", c["params"])
+            # rejected CVEs must come back too, so a stored record can be replaced
+            self.assertNotIn("noRejected", c["flags"])
+
+    def test_window_is_sent_in_nvd_format(self):
+        fake = self.nvd(cves={"sirt@juniper.net": [record("CVE-2025-0001")]})
+        ids, _ = self.ids(fake, mod_start=T0 - timedelta(hours=7), mod_end=T0)
+        self.assertEqual(ids, ["CVE-2025-0001"])
+        params = fake.calls[0]["params"]
+        self.assertEqual((params["lastModStartDate"], params["lastModEndDate"]),
+                         ("2026-10-09T01:00:00.000Z", "2026-10-09T08:00:00.000Z"))
+        self.assertIn("lastModStartDate=2026-10-09T01:00:00.000Z", fake.calls[0]["url"])
+
+    def test_no_answer_raises(self):
+        with self.assertRaises(nvd.NvdUnavailable):
+            self.ids(self.nvd(script=["down"]))
 
 
 class TestRateLimit(Base):

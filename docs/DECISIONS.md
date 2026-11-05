@@ -96,3 +96,35 @@ back to the browser, into a log or an API response: the page shows only where
 the key comes from, and "Test key" makes one NVD request and reports valid,
 invalid or unreachable. The file lives with the data, so the installer keeps
 it and `uninstall --purge` removes it.
+
+## D11. Junos devices are decided from Juniper's own CVE records
+
+NVD answered no Junos lookup: the CPE name had 14 components, which NVD
+rejects with HTTP 404, and it kept the build number, for which NVD returns
+fewer CVEs. Even the correct name misses many CVEs, because NVD's
+applicability data for Junos lags Juniper's advisories and lists only some
+releases. Juniper is the CNA for its products
+and states the affected Junos releases in every CVE record (CVE JSON 5), so
+those records decide a Junos device, with NVD's cpeName answer adding only the
+CVEs Juniper did not assign. The records are taken from the CVE Services API
+(cveawg.mitre.org). Choices made on the way:
+
+- The index (ids Juniper assigned) is pulled from NVD with its own NVD client
+  and a 60 s budget, so a slow pull never spends the device lookups' budget or
+  marks NVD unreachable for them. The first full pull and the record fetch
+  happen inside a scan; the refresh command with `--budget 600` fills an
+  empty cache in one run.
+- A device is decided only from a complete set of records. A partial set
+  would give an `ok` that silently misses CVEs, so the device is `unavailable`
+  until the gaps are filled.
+- "Train not listed" is judged over the whole record, not per affected block:
+  records often split one statement over several platform blocks, and a train
+  fixed or stated unaffected in one of them is assessed.
+- Records that use `changes` as a timeline over one train (status from the
+  train's start, flipping at `lessThan` and at each change) are read as such.
+- A model that cannot be placed among a record's platforms matches every
+  platform block, and platform limits stated only in description text are not
+  read. Both can over-report for a given model; neither can hide a CVE.
+- Anything not parsed is listed in `cve_lookup.undecided`, never guessed.
+  `cve_lookup` gained `reason` (why a lookup is not `ok`) and `undecided`, and
+  the plugin says both in plain words.

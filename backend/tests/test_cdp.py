@@ -229,6 +229,8 @@ class TestCdpInTheGraph(unittest.TestCase):
         phone = nodes["host:cdp:SEP001122334455"]
         self.assertEqual((phone["discovery_method"], phone["role"], phone["parent_id"]),
                          ("cdp", "phone", f"device:{L3_CID}"))
+        # the end host keeps the chassis id it was announced with
+        self.assertEqual(phone["chassis_id"], "cdp:SEP001122334455")
 
 
 if __name__ == "__main__":

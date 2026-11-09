@@ -315,6 +315,8 @@ class Node:
                 out["vlan"] = self.vlan
             if self.software_family is not None:
                 out["software_family"] = self.software_family
+            if self.chassis_id is not None:
+                out["chassis_id"] = self.chassis_id    # a host that announced itself over LLDP/CDP
         else:
             out["chassis_id"] = self.chassis_id
             out["pollable"] = self.pollable

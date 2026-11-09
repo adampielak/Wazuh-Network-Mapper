@@ -526,8 +526,8 @@ class TestJunosConfigGate(Base):
         doc = junosconfig.build_index({self.CHASSIS: entry}, conds, "2026-11-09T00:00:00Z", 3)
         return junosconfig.ConfigIndex(json.loads(json.dumps(doc)))
 
-    def stage(self, config_index):
-        node = dict(junos_node(), chassis_id=self.CHASSIS)
+    def stage(self, config_index, **node_fields):
+        node = dict(junos_node(), chassis_id=self.CHASSIS, **node_fields)
         graph = {"nodes": [node], "edges": [], "metadata": {}}
         client = nvd.NvdClient(transport=FakeNvd(cves={JUNOS_CPE: []}, clock=self.clock),
                                clock=self.clock, api_key="k", use_env_key=False)
@@ -543,6 +543,13 @@ class TestJunosConfigGate(Base):
         self.assertEqual((cfg["devices"], cfg["complete"], cfg["excluded"],
                           cfg["devices_with_exclusions"]), (1, 1, 1, 1))
         self.assertEqual(cfg["index_generated_at"], "2026-11-09T00:00:00Z")
+
+    def test_host_node_joins_by_chassis_id(self):
+        # an unpolled neighbour assembled as a host node keeps its chassis id
+        node, _ = self.stage(self.index(self.backup()), kind="endpoint",
+                             node_id=f"host:{self.CHASSIS}", pollable=False)
+        self.assertEqual(node["top_cves"], [])
+        self.assertEqual(node["cve_lookup"]["config"]["excluded"], [IDS[0]])
 
     def test_present_configuration_keeps_the_record(self):
         node, _ = self.stage(self.index(self.backup("set system extended-echo\n")))

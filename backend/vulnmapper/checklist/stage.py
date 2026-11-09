@@ -46,9 +46,11 @@ def run_stage(graph: dict, network_doc: dict, probe_enabled: bool,
     # has an up layer-3 interface for them.
     vlans_in_use = {n["vlan"] for n in graph.get("nodes") or []
                     if n.get("kind") != KIND_DEVICE and n.get("vlan") is not None}
-    for config in config_by_chassis.values():
+    vendor_by_chassis = {n.get("chassis_id"): n.get("vendor") for n in graph.get("nodes") or []
+                         if n.get("kind") == KIND_DEVICE and n.get("chassis_id")}
+    for chassis, config in config_by_chassis.items():
         if config and not config.get("failed"):
-            vlans_in_use |= l3_vlans(normalise(config))
+            vlans_in_use |= l3_vlans(normalise(config), vendor_by_chassis.get(chassis))
     for node in graph.get("nodes") or []:
         if node.get("kind") != KIND_DEVICE or not node.get("pollable"):
             continue

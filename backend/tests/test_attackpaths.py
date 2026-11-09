@@ -146,6 +146,21 @@ class TestReachability(unittest.TestCase):
         doc = run(nodes, {"endpoint:003": {"importance": "high"}})
         self.assertEqual(doc["targets"][0]["routes"], [])
 
+    def test_junos_logical_unit_is_not_a_vlan(self):
+        # "lo0.3" is loopback unit 3 and "jsrv.1" an internal unit: neither
+        # puts the Juniper device in VLAN 3 or 1. "irb.120" and the tagged
+        # data-port unit "reth1.112" put it in VLANs 120 and 112.
+        junos = dev("device:jn", "l3-switch", [], cves=[cve("J", 9.8)], risk=7.0,
+                    vendor="Juniper")
+        junos["port_status"] = {"lo0.3": "up", "jsrv.1": "up", "fxp0.0": "up",
+                                "irb.120": "up", "reth1.112": "up"}
+        nodes = [host("host:aa", 3, unmanaged=True), host("host:bb", 120, unmanaged=True),
+                 host("host:cc", 112, unmanaged=True), host("host:dd", 1, unmanaged=True),
+                 junos]
+        doc = run(nodes, {"device:jn": {"importance": "high"}})
+        starts = {r["start"] for r in doc["targets"][0]["routes"]}
+        self.assertEqual(starts, {"host:bb", "host:cc"})
+
     def test_lowest_id_router_on_a_tie(self):
         engine = ap.AttackPathEngine(graph([dev("device:b", "router", [10, 20]),
                                             dev("device:a", "router", [10, 20])]), None, None)

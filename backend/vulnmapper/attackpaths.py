@@ -205,7 +205,7 @@ class AttackPathEngine:
         ps = node.get("port_status") or {}
         config = {"interfaces": {i: {"name": name, "oper": t.UP if state == "up" else 2}
                                  for i, (name, state) in enumerate(ps.items())}}
-        return l3_vlans(config)
+        return l3_vlans(config, node.get("vendor"))
 
     def _routes(self, node: dict) -> set:
         return self._l3_vlans(node) if node.get("role") in ROUTER_ROLES else set()

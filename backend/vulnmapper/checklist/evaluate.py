@@ -106,15 +106,49 @@ L3_VLAN_NAMES = (
     re.compile(r"^[a-z][a-z0-9-]*?\s*[\d/]+\.(\d+)$", re.I),
 )
 
+# Interface types whose sub-interface (logical unit) number is never a VLAN:
+# loopback, management, discard, tunnel, services and internally generated
+# interfaces (Junos "lo0.3", "fxp0.0", "em1.0", "st0.1", "gr-0/0/0.5", ...;
+# generic "Loopback0", "Tunnel1"). Matched on the leading letters of the name.
+NON_VLAN_TYPES = frozenset({
+    "lo", "loopback", "fxp", "em", "me", "vme", "dsc", "gr", "gre", "ip", "ipip",
+    "lt", "vt", "st", "mt", "mtun", "pd", "pe", "pimd", "pime", "lsi", "tap",
+    "pfe", "pfh", "jsrv", "vtep", "sp", "ms", "si", "ls", "lsq", "ams", "cbp",
+    "demux", "pip", "pp", "esi", "fti", "rbeb", "bme", "tunnel", "tu", "null",
+})
+_TYPE_PREFIX = re.compile(r"^([a-z]+)", re.I)
 
-def l3_vlans(config: Optional[dict]) -> set:
-    """VLANs a device has an up layer-3 interface for, from its interface names."""
+# Junos routed VLAN interfaces "irb.N" (and "vlan.N" on older EX): by
+# convention unit N serves VLAN N. They carry no slot/port numbers, so
+# L3_VLAN_NAMES does not match them. Data-port units ("reth1.112",
+# "ae1.11", "ge-0/0/4.2126") keep the sub-interface convention: the
+# configuration ties a unit to a tag only through "vlan-id", and the usual
+# practice is "unit N vlan-id N". Loopback, management, tunnel and internal
+# units are dropped by NON_VLAN_TYPES before either pattern is tried.
+JUNOS_VLAN_NAMES = re.compile(r"^(?:irb|vlan)\.(\d+)$", re.I)
+
+
+def _is_non_vlan_type(name: str) -> bool:
+    match = _TYPE_PREFIX.match(name)
+    return bool(match) and match.group(1).lower() in NON_VLAN_TYPES
+
+
+def l3_vlans(config: Optional[dict], vendor: Optional[str] = None) -> set:
+    """VLANs a device has an up layer-3 interface for, from its interface names.
+
+    ``vendor`` is the graph's device vendor; "Juniper" adds the Junos routed
+    VLAN interfaces (``JUNOS_VLAN_NAMES``).
+    """
+    patterns = (*L3_VLAN_NAMES, JUNOS_VLAN_NAMES) if vendor == "Juniper" else L3_VLAN_NAMES
     out = set()
     for x in ((config or {}).get("interfaces") or {}).values():
         if x["oper"] != t.UP:
             continue
-        for pattern in L3_VLAN_NAMES:
-            match = pattern.match(str(x["name"]).strip())
+        name = str(x["name"]).strip()
+        if _is_non_vlan_type(name):
+            continue
+        for pattern in patterns:
+            match = pattern.match(name)
             if match and 1 <= int(match.group(1)) <= 4094:
                 out.add(int(match.group(1)))
                 break
@@ -237,7 +271,7 @@ class DeviceChecker:
                 spare.append(i)
             else:
                 recent += 1
-        in_use = {DEFAULT_VLAN, *(self.vlans_in_use or ()), *l3_vlans(self.config)}
+        in_use = {DEFAULT_VLAN, *(self.vlans_in_use or ()), *l3_vlans(self.config, self.vendor)}
         in_use |= {vlan_of[i] for i in ports if ifs[i]["oper"] == t.UP and vlan_of.get(i)}
         unused = sorted({vlan_of[i] for i in ports if vlan_of.get(i)} - in_use)
         found = [i for i in spare if vlan_of.get(i) in in_use]

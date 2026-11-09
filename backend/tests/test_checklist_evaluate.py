@@ -295,6 +295,25 @@ class TestChecks(unittest.TestCase):
         self.assertEqual(l3_vlans({"interfaces": named}), {10, 20, 30, 40, 50})
         self.assertEqual(l3_vlans(None), set())
 
+    def test_non_vlan_interface_types(self):
+        # Loopback, management, tunnel and internal units carry no VLAN.
+        named = {1: iface("lo0.3", if_type=24), 2: iface("fxp0.10"), 3: iface("em1.20"),
+                 4: iface("st0.1"), 5: iface("gr-0/0/0.5"), 6: iface("lt-0/0/0.6"),
+                 7: iface("Loopback0.7"), 8: iface("Tunnel1.8"),
+                 9: iface("GigabitEthernet0.40"), 10: iface("ge-0/0/1.41")}
+        self.assertEqual(l3_vlans({"interfaces": named}), {40, 41})
+
+    def test_junos_routed_vlan_and_data_port_units(self):
+        # irb.N / vlan.N and tagged data-port units count; loopback, tunnel,
+        # internal and out-of-range units do not.
+        named = {1: iface("lo0.3", if_type=24), 2: iface("ae1.11"), 3: iface("ge-0/0/0.40"),
+                 4: iface("irb.120"), 5: iface("vlan.130"), 6: iface("irb.0"),
+                 7: iface("irb.140", oper=t.DOWN), 8: iface("st0.1"), 9: iface("jsrv.1"),
+                 10: iface("reth1.112"), 11: iface("ae1.32767")}
+        self.assertEqual(l3_vlans({"interfaces": named}, "Juniper"), {11, 40, 112, 120, 130})
+        # Other vendors do not read the Junos routed VLAN interface names.
+        self.assertEqual(l3_vlans({"interfaces": named}), {11, 40, 112})
+
     def test_vlan_1_is_always_in_use(self):
         ifs = config()["interfaces"]
         ifs[3] = iface("FastEthernet0/3", oper=t.DOWN, last_change=1000)

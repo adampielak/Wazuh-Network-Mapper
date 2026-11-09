@@ -497,7 +497,15 @@ elsewhere, being a bridge port does.
   for it that is up, or when it is VLAN 1. A layer-3 interface is told by
   its name: a VLAN interface (`Vlan99`, `Vl99`, Comware `Vlan-interface99`)
   or a routed sub-interface (`GigabitEthernet0.99`, whose number is taken
-  as the VLAN). So a management VLAN that carries the devices' own
+  as the VLAN). Loopback, management, discard, tunnel, services and
+  internally generated interfaces (`lo0.3`, `fxp0.0`, `em1.0`, `st0.1`,
+  `gr-0/0/0.5`, `jsrv.1`, `Loopback0`, `Tunnel1`, ...) never count. On a
+  Juniper device the routed VLAN interfaces `irb.N` (and `vlan.N` on older
+  EX) count as VLAN N as well. A Junos data-port unit (`reth1.112`,
+  `ae1.11`) keeps the sub-interface convention: Junos ties a unit to a tag
+  only through `vlan-id`, and the number is taken as the VLAN on the usual
+  practice `unit N vlan-id N`. So a
+  management VLAN that carries the devices' own
   addresses counts as in use. Only a VLAN that meets none of these is taken
   for an unused (parking) VLAN, and the evidence lists those
   (`unused_vlans`), on a pass too, so a reader can see what was assumed.

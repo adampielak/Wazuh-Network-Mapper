@@ -162,6 +162,12 @@ export function TopologyPage() {
   const [tabChoice, setTabChoice] = useState<string | null>(savedTab);
   const { ref, height } = useFillHeight();
   const selected = graph?.nodes.find((n) => n.node_id === selectedId) || null;
+  // A link from attack paths ("Show on map") can span sites: open it on All so
+  // no hop is cut off at a tab edge. Clearing it returns to the saved tab.
+  const focused = !!(highlightKey || routeKey || passKey);
+  useEffect(() => {
+    setTabChoice(focused ? ALL_SITES : savedTab());
+  }, [focused, highlightKey, routeKey, passKey]);
 
   // Site tabs, from nodes that carry a site. The ISP row is off by default and
   // is cut out before the tabs are counted, so a tab's count matches what it draws.

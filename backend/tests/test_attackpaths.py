@@ -491,6 +491,8 @@ class TestPipeline(unittest.TestCase):
     def test_stage_off_matches_frozen_baseline(self):
         with open(os.path.join(FIXTURES, "pipeline_main_6eb7e74.json")) as f:
             frozen = json.load(f)
+        from test_crawl_advertised import with_advertised_identity
+        with_advertised_identity(frozen["graph"], frozen["vulnerabilities"])  # kept after this baseline
         out = self.run_pipeline("--no-attack-paths")
         self.assertFalse(os.path.exists(os.path.join(self.tmp, ap.FILENAME)))
         out["graph"]["metadata"]["timing"].pop("alongside_device_cves_s")   # added after it

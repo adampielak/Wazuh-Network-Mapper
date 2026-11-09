@@ -835,7 +835,7 @@
     },
     "device:90:6c:ac:d7:43:7f": {
       "kind": "device",
-      "hostname": null,
+      "hostname": "CYFOR-Firewall.cyfor.lab",
       "agent_id": null,
       "cve_lookup": {
         "status": "unidentified",

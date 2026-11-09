@@ -79,6 +79,10 @@ class Crawler:
         self._reserved = 0                        # counts toward max_nodes
         # chassis_id -> the LLDP capability bitmap its neighbours advertised for it
         self._caps: dict[str, str] = {}
+        # chassis_id -> the first LLDP entry a neighbour gave for it: its own
+        # name, description and MAC, kept for a device that is queued but never
+        # answers a poll (the poll is otherwise the only place they come from)
+        self._advertised: dict[str, Neighbor] = {}
         # CDP names a neighbour instead of giving its chassis id, so CDP links
         # wait until every device is polled and are then resolved by the
         # address the device was polled at, else by its name.
@@ -158,6 +162,14 @@ class Crawler:
                 dev = self._devices.get(cid)
                 if dev is not None and not dev.lldp_cap_enabled:
                     dev.lldp_cap_enabled = caps
+            # A neighbour that was queued by its address but answered no poll
+            # still told its neighbours who it is; a polled device keeps its own.
+            for cid, nb in self._advertised.items():
+                dev = self._devices.get(cid)
+                if dev is not None and not dev.pollable:
+                    dev.hostname = dev.hostname or nb.sys_name
+                    dev.vendor = dev.vendor or vendor_from_descr(nb.sys_descr)
+                    dev.mac = dev.mac or nb.chassis_mac
             infer_far_side_ports(self._devices, self._links)
             return list(self._devices.values()), list(self._links)
 
@@ -394,6 +406,7 @@ class Crawler:
             # whether or not it is ever polled
             if nb.cap_enabled and target_cid not in self._caps:
                 self._caps[target_cid] = nb.cap_enabled
+            self._advertised.setdefault(target_cid, nb)
             known = target_cid in self._devices or target_cid in self._seen
 
             if nb.mgmt_ip and not known:

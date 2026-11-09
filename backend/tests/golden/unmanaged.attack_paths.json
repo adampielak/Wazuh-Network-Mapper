@@ -103,7 +103,7 @@
     {
       "id": "device:00:23:ac:e5:74:00",
       "kind": "device",
-      "label": "device:00:23:ac:e5:74:00",
+      "label": "L3-Switch",
       "dependants": 0,
       "verified": true,
       "routes_through": 0

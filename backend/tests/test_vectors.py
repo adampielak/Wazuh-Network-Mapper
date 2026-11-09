@@ -251,6 +251,8 @@ class TestPipeline(unittest.TestCase):
         """Against the output of main at 8961af5 (before this stage) on the same inputs."""
         with open(os.path.join(FIXTURES, "pipeline_main_8961af5.json")) as f:
             today = json.load(f)
+        from test_crawl_advertised import with_advertised_identity
+        with_advertised_identity(today["graph"], today["vulnerabilities"])  # kept after this baseline
         out = self.run_pipeline("--no-cve-vectors")
         timing = out["graph"]["metadata"].pop("timing")
         self.assertNotIn("cve_vectors_s", timing)

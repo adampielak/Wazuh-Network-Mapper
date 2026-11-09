@@ -168,7 +168,7 @@
     },
     "device:00:23:ac:e5:74:00": {
       "kind": "device",
-      "hostname": null,
+      "hostname": "L3-Switch",
       "agent_id": null,
       "cve_lookup": {
         "status": "unidentified",

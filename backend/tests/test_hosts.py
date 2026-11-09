@@ -222,6 +222,8 @@ class TestPipeline(unittest.TestCase):
         from snmp_fakes import FIXTURES
         with open(os.path.join(FIXTURES, "pipeline_lab_13e6ebd.json")) as f:
             today = json.load(f)
+        from test_crawl_advertised import with_advertised_identity
+        with_advertised_identity(today)                       # kept after this baseline
         graph = self.run_pipeline("--no-name-lookup")
         from test_scoring import strip_ovss
         strip_ovss(graph), strip_ovss(today)                  # frozen before OVSS

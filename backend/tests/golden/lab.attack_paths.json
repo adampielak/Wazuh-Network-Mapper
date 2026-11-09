@@ -184,7 +184,7 @@
     {
       "id": "device:90:6c:ac:d7:43:7f",
       "kind": "device",
-      "label": "device:90:6c:ac:d7:43:7f",
+      "label": "CYFOR-Firewall.cyfor.lab",
       "dependants": 0,
       "verified": true,
       "routes_through": 0

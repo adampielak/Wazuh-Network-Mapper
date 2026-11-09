@@ -556,6 +556,17 @@ class TestJunosConfigGate(Base):
         self.assertEqual([c["cve"] for c in node["top_cves"]], [IDS[0]])
         self.assertEqual(node["cve_lookup"]["config"]["excluded"], [])
 
+    def test_inactive_only_configuration_drops_the_record(self):
+        # the statement exists, but only in a deactivated path
+        text = ("## Last commit: x\nversion 20.2R2-S3.4;\nsystem {\n    host-name R1;\n"
+                "    inactive: extended-echo;\n}\n"
+                + self.backup("set system extended-echo\ndeactivate system extended-echo\n"))
+        index = self.index(text)
+        node, result = self.stage(index)
+        self.assertEqual(node["top_cves"], [])
+        self.assertEqual(node["cve_lookup"]["config"]["excluded"], [IDS[0]])
+        self.assertEqual(result.block["juniper"]["config"]["excluded"], 1)
+
     def test_changed_record_text_keeps_the_record(self):
         # the index read another condition text: fingerprints differ
         node, _ = self.stage(self.index(self.backup(), "[ system services ssh ]"))

@@ -218,13 +218,17 @@ class DeviceConfig:
     def __init__(self, entry: dict, fingerprints: dict) -> None:
         self.complete = bool(entry.get("complete"))
         self.reason = entry.get("reason")
-        self.absent = set(entry.get("absent") or ()) if self.complete else set()
+        # A statement found only in deactivated paths is not applied either,
+        # so the device lacks the configuration in both cases.
+        lacking = set(entry.get("absent") or ()) | set(entry.get("inactive_only") or ())
+        self.absent = lacking if self.complete else set()
         self._fingerprints = fingerprints
 
     def excludes(self, record: dict) -> bool:
         """Whether ``record`` (a trimmed Juniper record) needs configuration
-        this device does not have: its id is in the device's ``absent`` list,
-        its text still parses, and to the same anchors the sidecar used."""
+        this device does not have: its id is in the device's ``absent`` or
+        ``inactive_only`` list, its text still parses, and to the same anchors
+        the sidecar used."""
         cve_id = record.get("id")
         if cve_id not in self.absent:
             return False

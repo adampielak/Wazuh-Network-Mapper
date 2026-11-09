@@ -60,6 +60,7 @@ class ScanContext:
         self.engine = None
         self._records = None
         self._juniper = None
+        self._junos_config = False      # not loaded yet (None: loaded, there is none)
 
         self.endpoints: list[dict] = []
         self.network_doc: dict = {"nodes": [], "edges": []}
@@ -140,6 +141,16 @@ class ScanContext:
                                   budget_s=INDEX_BUDGET_S),
                 self.threat_transport)
         return self._juniper
+
+    def junos_config(self):
+        """The Junos configuration index (``--junos-config-index``), loaded on
+        first use; None without the option or when it cannot be read. Used by
+        the device CVE stage and the configuration checks."""
+        if self._junos_config is False:
+            from .devicecves.junosconfig import ConfigIndex
+
+            self._junos_config = ConfigIndex.load(getattr(self.args, "junos_config_index", None))
+        return self._junos_config
 
     def records(self):
         """The scan's CVE records (cve-records.json), made on first use."""
@@ -240,6 +251,11 @@ def build_parser() -> argparse.ArgumentParser:
                              "vulnerabilities file, or beside -o).")
     parser.add_argument("--nvd-budget", type=float, default=None, metavar="SECONDS",
                         help="time budget for the NVD lookups of one scan (default 180).")
+    parser.add_argument("--junos-config-index", metavar="PATH",
+                        help="Junos configuration index (JSON, built from configuration "
+                             "backups): drops Junos CVEs whose required configuration the "
+                             "device lacks and gives the configuration checks port "
+                             "descriptions and trunk modes. Without it, output is unchanged.")
     parser.add_argument("--no-checklist", action="store_true",
                         help="skip the device configuration checks (no extra SNMP reads); "
                              "device nodes are emitted as before.")

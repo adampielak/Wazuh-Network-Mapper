@@ -123,6 +123,13 @@ class TestTrimRecord(unittest.TestCase):
         r = juniper.trim_record(doc)
         self.assertEqual((r["state"], r["blocks"], r["metrics"]), ("REJECTED", [], {}))
 
+    def test_configurations_kept_as_text(self):
+        doc = cna_doc("CVE-2024-0003")
+        doc["containers"]["cna"]["configurations"] = [
+            {"lang": "en", "value": "[ system extended-echo ]"}, {"lang": "en"}, "x"]
+        self.assertEqual(juniper.trim_record(doc)["configurations"], ["[ system extended-echo ]"])
+        self.assertEqual(juniper.trim_record(cna_doc("CVE-2024-0004"))["configurations"], [])
+
     def test_not_a_record(self):
         for doc in ({}, {"cveMetadata": {}}, {"cveMetadata": [], "containers": {}}):
             with self.assertRaises(ValueError):
@@ -249,6 +256,24 @@ class TestPrepare(Base):
         self.assertEqual(sorted(self.cveorg.calls), IDS)
         self.assertEqual((jr.complete, jr.evo_complete, jr.stats["evo_pending"]), (True, True, 0))
         self.assertEqual(len(jr.records[IDS[0]]["evo_blocks"]), 1)
+
+    def test_records_kept_without_configurations_are_fetched_again(self):
+        self.records().prepare()
+        with open(self.path, encoding="utf-8") as f:
+            doc = json.load(f)
+        for cve_id in IDS:
+            doc["entries"][cve_id]["data"].pop("configurations", None)
+        with open(self.path, "w", encoding="utf-8") as f:
+            json.dump(doc, f)
+        self.cveorg.calls.clear()
+        jr = self.records()
+        self.assertTrue(jr.prepare())
+        self.assertEqual(sorted(self.cveorg.calls), IDS)
+        self.assertIn("configurations", jr.records[IDS[0]])
+        # fetched again or not, the set stays complete
+        self.cveorg.calls.clear()
+        self.assertTrue(self.records().prepare())
+        self.assertEqual(self.cveorg.calls, [])
 
     def test_evolved_blocks_not_fetched_again_leave_the_set_incomplete_for_evolved(self):
         self.records().prepare()

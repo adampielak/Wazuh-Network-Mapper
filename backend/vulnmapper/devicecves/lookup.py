@@ -43,7 +43,10 @@ from .nvd import (NvdBudgetExceeded, NvdClient, NvdInvalidQuery, NvdUnavailable,
 # lists the CVEs whose records make no claim for the device's release. A
 # firmware string that is not a regular release (``<major>.<minor>R<n>[-S<n>][.<build>]``) is
 # ``unverified`` (``version_not_comparable``); an incomplete set of Juniper
-# records makes the device ``unavailable``, never a partial ``ok``.
+# records makes the device ``unavailable``, never a partial ``ok``. With a
+# configuration index entry for the device (``--junos-config-index``), a Juniper
+# record whose ``configurations`` text names statements none of which is in
+# the device's complete backup is dropped; ``config`` lists the dropped ids.
 
 STATUS_OK = "ok"
 STATUS_UNVERIFIED = "unverified"
@@ -74,6 +77,8 @@ class Lookup:
     queries: list = field(default_factory=list)
     source: str = SOURCE_NVD
     undecided: Optional[list] = None     # Junos: CVE ids the records make no claim on
+    config: Optional[dict] = None        # Junos with a configuration index entry:
+    #                                      {complete, reason, excluded}
 
 
 class Unanswered(VulnmapperError):
@@ -152,7 +157,7 @@ def _junos_trim(cve: dict, product: str = "junos") -> dict:
 
 
 def _lookup_junos(ident: dict, client: NvdClient, cache: Cache, juniper, model: Optional[str],
-                  result: Lookup) -> Lookup:
+                  result: Lookup, config=None) -> Lookup:
     result.source = SOURCE_JUNIPER
     evolved = ident.get("family") == JUNOS_EVO_FAMILY
     product = "junos_os_evolved" if evolved else "junos"
@@ -184,6 +189,14 @@ def _lookup_junos(ident: dict, client: NvdClient, cache: Cache, juniper, model: 
         return result
     nvd_by_id = {c.get("id"): c for c in answer["data"] if isinstance(c, dict)}
     affected, undecided = juniper.assess(v, model, evolved)
+    if config is not None:
+        # a record whose configuration the device's backup lacks is dropped
+        # (vulnmapper.devicecves.conditions, junosconfig)
+        excluded = [r["id"] for r in affected if config.excludes(r)]
+        result.config = {"complete": config.complete, "reason": config.reason,
+                         "excluded": excluded}
+        drop = set(excluded)
+        affected = [r for r in affected if r["id"] not in drop]
     rows = []
     for record in affected:
         cve = record
@@ -207,10 +220,12 @@ def _lookup_junos(ident: dict, client: NvdClient, cache: Cache, juniper, model: 
 
 
 def lookup(ident: dict, client: NvdClient, cache: Cache, juniper=None,
-           model: Optional[str] = None) -> Lookup:
+           model: Optional[str] = None, config=None) -> Lookup:
     """Look one identified device up. ``ident`` is :func:`families.identify`'s result;
     ``juniper`` (a :class:`~vulnmapper.devicecves.juniper.JuniperRecords`) decides Junos
-    devices, whose ``model`` places them among a record's platforms."""
+    devices, whose ``model`` places them among a record's platforms, and whose
+    ``config`` (a :class:`~vulnmapper.devicecves.junosconfig.DeviceConfig`) drops
+    the records needing configuration the device's backup lacks."""
     result = Lookup(status=STATUS_UNIDENTIFIED, match=None, product=ident.get("product"),
                     cpe=ident.get("cpe"), from_cache=True)
     if ident.get("match") == "none":
@@ -222,7 +237,7 @@ def lookup(ident: dict, client: NvdClient, cache: Cache, juniper=None,
     result.match = ident["match"]
     if juniper is not None and ident.get("family") in (JUNOS_FAMILY, JUNOS_EVO_FAMILY) \
             and ident["match"] == "cpe":
-        return _lookup_junos(ident, client, cache, juniper, model, result)
+        return _lookup_junos(ident, client, cache, juniper, model, result, config)
     package, version = ident.get("product"), ident.get("version")
     try:
         if ident["match"] == "cpe":

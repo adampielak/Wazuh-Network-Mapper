@@ -37,7 +37,9 @@ log = logging.getLogger("vulnmapper.devicecves")
 #   (``reason`` when the status is not ok and the lookup said why, e.g.
 #   "not_in_dictionary", "juniper_records_incomplete", "version_not_comparable",
 #   "no_cpe_rule", "model_not_mapped";
-#   Junos also ``undecided``: CVE ids whose records make no claim for its release)
+#   Junos also ``undecided``: CVE ids whose records make no claim for its release,
+#   and with a configuration index entry ``config``: {complete, reason, excluded},
+#   the CVE ids dropped because the backup lacks the configuration they need)
 #
 # How the lookup's status maps to the findings:
 #
@@ -81,6 +83,8 @@ def _lookup_object(result: Lookup, rows: Optional[list]) -> dict:
         out["reason"] = result.reason
     if result.undecided is not None:
         out["undecided"] = result.undecided
+    if result.config is not None:
+        out["config"] = result.config
     return out
 
 
@@ -110,18 +114,32 @@ def device_entry(node: dict, rows: Optional[list]) -> dict:
     }
 
 
-def run_stage(graph: dict, client: NvdClient, cache: Cache, juniper=None) -> StageResult:
+def run_stage(graph: dict, client: NvdClient, cache: Cache, juniper=None,
+              config_index=None) -> StageResult:
     """Look up every device node of ``graph`` and update it in place; ``juniper``
-    (a JuniperRecords) decides the Junos devices."""
+    (a JuniperRecords) decides the Junos devices, ``config_index`` (a
+    junosconfig.ConfigIndex) drops their CVEs needing configuration they lack."""
     out = StageResult()
     by_status: Counter = Counter()
+    config_stats = {"devices": 0, "complete": 0, "incomplete": Counter(), "excluded": 0,
+                    "devices_with_exclusions": 0}
     unreachable, stale, budget, unidentified, no_juniper = [], [], [], [], []
     from_cache = 0
     # A host that answered SNMP with a software family is looked up the same way.
     devices = [n for n in graph.get("nodes") or [] if n.get("kind") == KIND_DEVICE
                or n.get("software_family")]
     for node in devices:
-        result = lookup(families.identify(node), client, cache, juniper, node.get("model"))
+        dev_config = config_index.device(node.get("chassis_id")) if config_index else None
+        result = lookup(families.identify(node), client, cache, juniper, node.get("model"),
+                        dev_config)
+        if result.config is not None:
+            config_stats["devices"] += 1
+            if result.config["complete"]:
+                config_stats["complete"] += 1
+            else:
+                config_stats["incomplete"][result.config["reason"] or "unknown"] += 1
+            config_stats["excluded"] += len(result.config["excluded"])
+            config_stats["devices_with_exclusions"] += bool(result.config["excluded"])
         rows = apply_result(node, result)
         nid = node["node_id"]
         by_status[result.status] += 1
@@ -160,6 +178,10 @@ def run_stage(graph: dict, client: NvdClient, cache: Cache, juniper=None) -> Sta
     }
     if juniper is not None and juniper.prepared:
         out.block["juniper"] = juniper.block()
+        if config_index is not None:
+            config_stats["incomplete"] = dict(sorted(config_stats["incomplete"].items()))
+            out.block["juniper"]["config"] = {"index_generated_at": config_index.generated_at,
+                                              **config_stats}
     log.info("device CVEs: %d device(s) %s, %d NVD request(s)", len(devices),
              dict(by_status), client.requests)
     return out
@@ -170,7 +192,7 @@ def run_device_cves(scan: "ScanContext") -> StageResult:
     found added to the scan's CVE catalogue and vulnerabilities.json entries."""
     client, cache = scan.nvd()
     before = cache.tally()
-    result = run_stage(scan.document, client, cache, scan.juniper())
+    result = run_stage(scan.document, client, cache, scan.juniper(), scan.junos_config())
     result.note = nvd_note(result.block, f"{plural(result.block['looked_up'], 'device')} looked up",
                            scan.nvd_tally("device CVEs", before), cache.retry_after)
     scan.add_findings(result)

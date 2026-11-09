@@ -17,6 +17,7 @@ from .. import vulnfile
 from .cache import Cache, default_path
 from .juniper import INDEX_BUDGET_S, RECORD_BUDGET_S, JuniperRecords
 from .juniper import default_path as juniper_path, records_cache
+from .junosconfig import ConfigIndex
 from .nvd import NvdClient, SystemClock
 from ..endpoints import merge_catalogue
 from .stage import DEFAULT_BUDGET_S, run_stage
@@ -96,6 +97,9 @@ def main(argv: Optional[list] = None, transport=None, clock=None,
                         help="NVD answer cache (default: nvd-cache.json beside the graph)")
     parser.add_argument("--budget", type=float, default=DEFAULT_BUDGET_S, metavar="SECONDS",
                         help="time budget for the NVD lookups (default 180)")
+    parser.add_argument("--junos-config-index", metavar="PATH",
+                        help="Junos configuration index: drops Junos CVEs whose required "
+                             "configuration the device lacks")
     args = parser.parse_args(argv)
 
     graph = _load(args.graph)
@@ -110,7 +114,7 @@ def main(argv: Optional[list] = None, transport=None, clock=None,
         records_cache(juniper_path(cache.path), clock), clock,
         lambda: NvdClient(transport=transport, clock=clock, budget_s=INDEX_BUDGET_S),
         records_transport, record_budget_s=max(RECORD_BUDGET_S, args.budget))
-    result = run_stage(graph, client, cache, juniper)
+    result = run_stage(graph, client, cache, juniper, ConfigIndex.load(args.junos_config_index))
 
     meta = graph.setdefault("metadata", {})
     meta["warnings"] = [w for w in meta.get("warnings") or []

@@ -87,8 +87,9 @@ def records_cache(path: Optional[str], clock) -> Cache:
 
 def trim_record(doc: dict) -> dict:
     """A CVE JSON 5 record -> the NVD record shape ``parse_cve`` reads, plus
-    ``state``, ``blocks`` (the Junos OS affected blocks) and ``evo_blocks``
-    (the Junos OS Evolved affected blocks)."""
+    ``state``, ``blocks`` (the Junos OS affected blocks), ``evo_blocks``
+    (the Junos OS Evolved affected blocks) and ``configurations`` (the CNA's
+    configuration text, read by :mod:`vulnmapper.devicecves.conditions`)."""
     meta = doc.get("cveMetadata") or {}
     cna = (doc.get("containers") or {}).get("cna") or {}
     if not isinstance(meta, dict) or not isinstance(cna, dict):
@@ -117,6 +118,8 @@ def trim_record(doc: dict) -> dict:
         "metrics": metrics,
         "blocks": junos.junos_blocks(cna.get("affected")),
         "evo_blocks": junos.evo_blocks(cna.get("affected")),
+        "configurations": [c.get("value") for c in cna.get("configurations") or []
+                           if isinstance(c, dict) and isinstance(c.get("value"), str)],
     }
 
 
@@ -267,6 +270,9 @@ class JuniperRecords:
             return None, True
         if entry["found"] and isinstance(entry.get("data"), dict) and "evo_blocks" not in entry["data"]:
             return entry, True          # kept before Evolved blocks were stored
+        if entry["found"] and isinstance(entry.get("data"), dict) \
+                and "configurations" not in entry["data"]:
+            return entry, True          # kept before the configuration text was stored
         since = _parse_time(changed.get(cve_id)) if cve_id in changed else None
         if since is not None and _parse_time(entry["fetched_at"]) < since:
             return entry, True

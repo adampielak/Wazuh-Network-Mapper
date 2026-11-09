@@ -13,6 +13,8 @@ import {
   EuiPanel,
   EuiSpacer,
   EuiSwitch,
+  EuiTab,
+  EuiTabs,
   EuiText,
   EuiTextColor,
   EuiTitle,
@@ -28,6 +30,28 @@ import { graphColors } from '../../lib/theme';
 import { DeviceDetail } from './DeviceDetail';
 import { MapLegend } from './MapLegend';
 import { hiddenKeyOf, offlineHosts, visibleSelection } from './inactive';
+import { BandOptions, withoutIsp } from './bands';
+import { ALL_SITES, filterBySite, siteOf, siteTabs, tabOf } from './site';
+
+const TAB_KEY = 'vulnmapper.topology.site';
+const DEFAULT_TAB = 'DC1';
+
+// The last chosen site tab lives for the browser session only; storage can be
+// blocked, so every access is guarded.
+function savedTab(): string | null {
+  try {
+    return window.sessionStorage.getItem(TAB_KEY);
+  } catch {
+    return null;
+  }
+}
+function saveTab(tab: string) {
+  try {
+    window.sessionStorage.setItem(TAB_KEY, tab);
+  } catch {
+    // storage unavailable: the choice just is not remembered
+  }
+}
 
 // Counts line, all from the loaded graph. "Unparented" = endpoints the scanner
 // could not attach to a switch port (parent_id null).
@@ -134,8 +158,27 @@ export function TopologyPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hideInactive, setHideInactive] = useState(true);
   const view = useRef<TopologyViewHandle>(null);
+  const [showIsp, setShowIsp] = useState(false);
+  const [tabChoice, setTabChoice] = useState<string | null>(savedTab);
   const { ref, height } = useFillHeight();
   const selected = graph?.nodes.find((n) => n.node_id === selectedId) || null;
+
+  // Site tabs, from nodes that carry a site. The ISP row is off by default and
+  // is cut out before the tabs are counted, so a tab's count matches what it draws.
+  const base = useMemo(() => (graph && !showIsp ? withoutIsp(graph) : graph), [graph, showIsp]);
+  const tabs = useMemo(() => (base ? siteTabs(base) : []), [base]);
+  const tab = tabs.includes(tabChoice || '') ? tabChoice! : tabs.includes(DEFAULT_TAB) ? DEFAULT_TAB : tabs[0];
+  const siteView = useMemo(() => (base && tab ? filterBySite(base, tab) : null), [base, tab]);
+  const shown = siteView ? siteView.graph : graph;
+  const hasIsp = !!graph && graph.nodes.some((n) => n.net_role === 'ISP');
+  const layoutOptions = useMemo<BandOptions>(
+    () => ({
+      showIsp,
+      laneOf: base && tab === ALL_SITES ? tabOf(siteOf(base)) : undefined,
+      laneOrder: tabs.filter((t) => t !== ALL_SITES),
+    }),
+    [showIsp, base, tab, tabs]
+  );
 
   // Offline hosts (the shared rule) never sit in the topology: hidden, they
   // are gone; shown, they are grouped greyed in a column on the right.
@@ -197,14 +240,43 @@ export function TopologyPage() {
             </EuiButton>
           </EuiFlexItem>
         )}
+        {hasIsp && (
+          <EuiFlexItem grow={false}>
+            <EuiSwitch
+              compressed
+              label="Show upstream (ISP)"
+              checked={showIsp}
+              onChange={(e) => setShowIsp(e.target.checked)}
+              data-test-subj="vmShowIsp"
+            />
+          </EuiFlexItem>
+        )}
         <EuiFlexItem>
-          {graph && (
+          {shown && (
             <EuiText size="s" color="subdued" data-test-subj="vmCounts">
-              <p>{counts(graph)}</p>
+              <p>{counts(shown)}</p>
             </EuiText>
           )}
         </EuiFlexItem>
       </EuiFlexGroup>
+      {tabs.length > 0 && (
+        <EuiTabs size="s" data-test-subj="vmSiteTabs">
+          {tabs.map((t) => (
+            <EuiTab
+              key={t}
+              isSelected={t === tab}
+              onClick={() => {
+                saveTab(t);
+                setTabChoice(t);
+                setSelectedId(null);
+              }}
+              data-test-subj={`vmSiteTab-${t}`}
+            >
+              {t}
+            </EuiTab>
+          ))}
+        </EuiTabs>
+      )}
       <div style={{ height: 8 }} />
       <MapLegend />
       <div style={{ height: 8 }} />
@@ -229,7 +301,9 @@ export function TopologyPage() {
               <EuiPanel paddingSize="none" className="vmTopology" style={{ height: '100%' }}>
                 <TopologyView
                   ref={view}
-                  graph={graph}
+                  graph={shown!}
+                  layoutOptions={layoutOptions}
+                  crossSite={siteView?.cross}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                   hiddenKey={hiddenKey}

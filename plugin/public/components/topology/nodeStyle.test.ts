@@ -1,6 +1,6 @@
 import { GraphNode, LivenessResponse, NodeLiveness } from '../../../common';
 import { isOfflineHost } from './inactive';
-import { borderForLevel, isOffline } from './nodeStyle';
+import { borderForLevel, crossSiteBadge, isOffline } from './nodeStyle';
 import { nodeLevel, TIER_META } from '../../lib/risk';
 
 function node(node_id: string, kind: 'device' | 'endpoint', fields: Partial<GraphNode> = {}): GraphNode {
@@ -58,5 +58,16 @@ describe('node colour (more severe of tier and configuration finding)', () => {
     expect(colour('P0', 'high')).toBe(TIER_META.P0.color);
     expect(colour('P3', 'low')).toBe(TIER_META.P3.color);
     expect(colour('P3', null)).toBe(TIER_META.P3.color);
+  });
+});
+
+describe('crossSiteBadge', () => {
+  it('counts the peers per far-side tab and lists them in the tooltip', () => {
+    const b = crossSiteBadge([
+      { tab: 'DC2', peers: ['a', 'b'] },
+      { tab: 'SB', peers: ['c'] },
+    ]);
+    expect(b.text).toBe('-> DC2 (2), -> SB (1)');
+    expect(b.title).toBe('DC2: a, b\nSB: c');
   });
 });

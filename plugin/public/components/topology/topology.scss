@@ -52,6 +52,16 @@
     border: 1px solid $euiColorWarning;
     pointer-events: none;
   }
+  // links into another site tab: a label under the node
+  .node__cross {
+    position: absolute; bottom: -9px; left: 10px; max-width: 164px;
+    padding: 0 7px; border-radius: 9px;
+    font-size: 11px; line-height: 17px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: $euiTextColor;
+    background: $euiColorLightestShade;
+    border: 1px solid $euiColorMediumShade;
+  }
   .node__icon { color: $euiColorDarkShade; display: block; margin: 2px auto 6px; }
   .node__label {
     font-weight: 600; font-size: 13px; color: $euiTextColor;

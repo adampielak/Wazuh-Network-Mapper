@@ -5,7 +5,9 @@ import { EuiBadge } from '@elastic/eui';
 import { Handle, Position, Node, NodeProps } from 'react-flow-renderer';
 import { GraphNode } from '../../../common';
 import { iconForRole } from './icons';
-import { borderForLevel, isOffline, statusDot } from './nodeStyle';
+import { borderForLevel, crossSiteBadge, isOffline, statusDot } from './nodeStyle';
+import { displayName, displaySubtitle } from './labels';
+import type { CrossLink } from './site';
 import { nodeLevel, RISK_META, TIER_META } from '../../lib/risk';
 import { ovssLine } from '../../lib/ovssText';
 import { findingsBadge, findingsBadgeText } from '../../lib/findingsBadge';
@@ -16,7 +18,12 @@ import { useLiveness } from '../../lib/liveness';
 // A React Flow node whose `data` payload is a real graph node, plus its place
 // on the route being shown (Attack paths "Show on map").
 // `entry`: the spare ports a route enters this switch by (compact, and in full).
-export type TopologyNodeData = GraphNode & { route?: RouteMark; entry?: { short: string; full: string } };
+// `cross`: links from this node into other site tabs, drawn as a badge.
+export type TopologyNodeData = GraphNode & {
+  route?: RouteMark;
+  entry?: { short: string; full: string };
+  cross?: CrossLink[];
+};
 export type TopologyFlowNode = Node<TopologyNodeData>;
 
 const END_TEXT = { start: 'Start', target: 'Target', both: 'Start · Target' };
@@ -53,7 +60,10 @@ export function CustomNode({ data }: NodeProps<TopologyNodeData>) {
   // finding, so a calm tier never hides a high finding (see nodeLevel).
   const border = borderForLevel(nodeLevel(data, findings?.severity ?? null));
   const dimmed = data.stale || isOffline(data, livenessContext);
-  const label = data.hostname || data.ip || data.node_id;
+  const label = displayName(data);
+  const subtitle = displaySubtitle(data);
+  const sub = [subtitle, data.role && roleLabel(data.role, data.kind)].filter(Boolean).join(' · ');
+  const cross = data.cross?.length ? crossSiteBadge(data.cross) : null;
 
   return (
     // The unmanaged label sits beside the node, not in it, so an offline node's
@@ -72,7 +82,7 @@ export function CustomNode({ data }: NodeProps<TopologyNodeData>) {
         <span className="node__dot" style={{ background: dot }} />
         <Icon className="node__icon" size={26} strokeWidth={1.5} />
         <div className="node__label">{label}</div>
-        {data.role && <div className="node__role">{roleLabel(data.role, data.kind)}</div>}
+        {sub && <div className="node__role">{sub}</div>}
         {data.node_tier && (
           <span className="node__tier" title={ovssLine(data)}>
             <EuiBadge color={TIER_META[data.node_tier].color}>{data.node_tier}</EuiBadge>
@@ -89,6 +99,11 @@ export function CustomNode({ data }: NodeProps<TopologyNodeData>) {
       {data.entry && (
         <span className="node__entry" title={data.entry.full} data-test-subj="vmEntryChip">
           Entry: {data.entry.short}
+        </span>
+      )}
+      {cross && (
+        <span className="node__cross" title={cross.title} data-test-subj="vmCrossSite">
+          {cross.text}
         </span>
       )}
       {data.unmanaged && (

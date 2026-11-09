@@ -17,6 +17,8 @@ import ReactFlow, {
 } from 'react-flow-renderer';
 import { GraphResponse } from '../../../common';
 import { layoutGraph, LayoutEdge } from './layout';
+import type { BandOptions } from './bands';
+import type { CrossLink } from './site';
 import { highlightClass, RouteEntry, routeArrows, routeMarks } from './highlight';
 import { CustomNode, TopologyFlowNode } from './CustomNode';
 import { clipLabel, pointOnLink, portLabels, PortLabels } from './edgeLabels';
@@ -236,6 +238,10 @@ interface TopologyViewProps {
    * target, else an entry chip under its Start tag. Display only.
    */
   entry?: RouteEntry;
+  /** layout options of the banded layout (ISP row, swimlanes); keep the object stable */
+  layoutOptions?: BandOptions;
+  /** per node_id: links into other site tabs, shown as a badge */
+  crossSite?: Map<string, CrossLink[]>;
 }
 
 // A link the route travels along: thicker, in the route colour, with marching
@@ -273,7 +279,7 @@ function withoutHidden(graph: GraphResponse, hiddenKey: string): GraphResponse {
 
 export const TopologyView = forwardRef<TopologyViewHandle, TopologyViewProps>(
   (
-    { graph, onSelect, selectedId, hiddenKey = '', highlightKey = '', passKey = '', routeKey = '', entry },
+    { graph, onSelect, selectedId, hiddenKey = '', highlightKey = '', passKey = '', routeKey = '', entry, layoutOptions, crossSite },
     ref
   ) => {
     const highlight = useMemo(
@@ -287,13 +293,13 @@ export const TopologyView = forwardRef<TopologyViewHandle, TopologyViewProps>(
       // layoutGraph is the pure layout-prep module: it computes positions/ranks
       // from the real edges and returns the edges to draw (incl. dashed "inferred"
       // links). We only translate its output into React Flow styling here.
-      const { nodes: laidOut, edges: laidEdges } = layoutGraph(withoutHidden(graph, hiddenKey));
+      const { nodes: laidOut, edges: laidEdges } = layoutGraph(withoutHidden(graph, hiddenKey), layoutOptions);
       const layoutY = new Map(laidOut.map((n) => [n.id, n.position.y]));
       const rfNodes: TopologyFlowNode[] = laidOut.map((p) => ({
         id: p.id,
         type: p.type,
         position: p.position,
-        data: p.data,
+        data: crossSite?.has(p.id) ? { ...p.data, cross: crossSite.get(p.id) } : p.data,
       }));
 
       // Three legible channels (Issue 6):
@@ -339,7 +345,7 @@ export const TopologyView = forwardRef<TopologyViewHandle, TopologyViewProps>(
       });
 
       return { layoutNodes: rfNodes, edges: rfEdges };
-    }, [graph, hiddenKey]);
+    }, [graph, hiddenKey, layoutOptions, crossSite]);
     const arrows = useMemo(() => (walk.length ? routeArrows(walk, edges) : null), [walk, edges]);
     // The spare ports a route enters by, on its first switch: display only, so
     // never part of the layout or the counts.

@@ -67,8 +67,20 @@ export type CveSummary = {
   max_cvss: number | null;
 };
 
+// Where a node sits: its site and its network role, as classified by the data
+// pipeline. Absent in graphs written before the classification; the map then
+// uses its plain layout. Roles: ISP, BR, SP, LF, FW, SW, MGT, SW-CCTV, SRV, AI-SRV.
+export type NetSource = "netbox" | "zabbix" | "name" | "neighbour";
+export type NetRole = "ISP" | "BR" | "SP" | "LF" | "FW" | "SW" | "MGT" | "SW-CCTV" | "SRV" | "AI-SRV";
+type SiteFields = {
+  site?: string | null;
+  site_source?: NetSource | null;
+  net_role?: NetRole | null;
+  net_role_source?: NetSource | null;
+};
+
 // Common fields shared by both kinds of node.
-type GraphNodeBase = OvssNode & {
+type GraphNodeBase = OvssNode & SiteFields & {
   node_id: string;
   kind: "device" | "endpoint";
   ip: string | null;

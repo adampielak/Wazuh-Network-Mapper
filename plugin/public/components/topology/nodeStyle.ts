@@ -4,6 +4,7 @@
 import { NODE_LEVEL_META, NodeLevel } from '../../lib/risk';
 import { GraphNode, LivenessResponse, NodeLiveness } from '../../../common';
 import { isOfflineHost } from './inactive';
+import type { CrossLink } from './site';
 
 /**
  * LIVENESS -> corner dot color. This is the dot's ONLY meaning — it must never
@@ -59,4 +60,15 @@ export function isOffline(node: GraphNode, liveness: LivenessResponse | null | u
   if (state === 'inactive') return true;
   const s = (node.status || '').toLowerCase();
   return s === 'disconnected' || s === 'discovered';
+}
+
+/**
+ * The badge of a node with links into other site tabs: "-> DC2 (3)", one entry
+ * per far-side tab, and a tooltip naming the peers.
+ */
+export function crossSiteBadge(links: CrossLink[]): { text: string; title: string } {
+  return {
+    text: links.map((l) => `-> ${l.tab} (${l.peers.length})`).join(', '),
+    title: links.map((l) => `${l.tab}: ${l.peers.join(', ')}`).join('\n'),
+  };
 }

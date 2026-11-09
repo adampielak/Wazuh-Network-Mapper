@@ -1,18 +1,21 @@
 // Where every node goes on the map: a top-down layered layout from dagre.
 import * as dagre from "@dagrejs/dagre";
 import { GraphNode, GraphEdge, GraphResponse } from "../../../common";
+import { BandOptions, hasBands, layoutBands } from "./bands";
 
 // React Flow does NOT auto-layout - it renders whatever x/y you hand it. So we
 // run dagre over the graph to compute a top-down hierarchy before rendering.
 //
 // CORE PRINCIPLE: ROOT SELECTION is separate from DEPTH ASSIGNMENT.
 //   - ROLE only picks the root (the viewing origin) and the node icon. It is
-//     NEVER used to decide a node's depth/tier.
+//     NEVER used to decide a node's depth/tier. The exception is net_role: when
+//     any node carries it, layoutGraph hands the graph to bands.ts, which draws
+//     role bands (BR on top) instead of this hop-distance layout.
 //   - DEPTH is the hop distance from the root over the ACTUAL edges, so the
 //     diagram reflects real cabling instead of an assumed firewall→L3→L2→host
 //     textbook order. A firewall wired below an L2 switch will be drawn below it.
-const NODE_W = 184;
-const NODE_H = 84;
+export const NODE_W = 184;
+export const NODE_H = 84;
 
 type Adjacency = Map<string, Set<string>>;
 
@@ -43,7 +46,7 @@ export type LayoutResult = { nodes: LayoutNode[]; edges: LayoutEdge[] };
  * source/target direction in the JSON only records who-discovered-whom, so we
  * ignore it here. Dangling edges (endpoint missing from nodes) are skipped.
  */
-function buildAdjacency(nodes: GraphNode[], edges: GraphEdge[] | undefined): Adjacency {
+export function buildAdjacency(nodes: GraphNode[], edges: GraphEdge[] | undefined): Adjacency {
   const ids = new Set(nodes.map((n) => n.node_id));
   const adj: Adjacency = new Map();
   for (const n of nodes) adj.set(n.node_id, new Set());
@@ -245,8 +248,8 @@ export function wrapRanks(
 // those links short and local.
 const PEND_GAP_X = 24;
 const PEND_GAP_Y = 18;
-const PEND_TOP_GAP = 44;
-const PEND_COLS_MAX = 14;
+export const PEND_TOP_GAP = 44;
+export const PEND_COLS_MAX = 14;
 // A pendant block is deliberately wide and flat rather than square: a rank's
 // line is as tall as its tallest box, so a square block of 51 hosts would push
 // every later rank down by its own height. Three rows is the readable ceiling.
@@ -254,7 +257,7 @@ const PEND_ROWS_MAX = 3;
 // Below this count a single row reads better than a short grid.
 const PEND_ROW_MIN = 4;
 // Clear air between the lowest ranked node and the lane of orphan nodes.
-const LANE_GAP = 150;
+export const LANE_GAP = 150;
 
 export function gridCols(count: number, max: number): number {
   const flat = Math.max(Math.ceil(count / PEND_ROWS_MAX), Math.min(count, PEND_ROW_MIN));
@@ -320,6 +323,25 @@ export function pendantGroups(
 }
 
 /**
+ * The rendered links: every confirmed link whose two ends are on the map.
+ */
+export function confirmedEdges(nodes: GraphNode[], rawEdges: GraphEdge[]): LayoutEdge[] {
+  const ids = new Set(nodes.map((n) => n.node_id));
+  return rawEdges
+    .filter((e) => ids.has(e.source) && ids.has(e.target))
+    .map((e, i) => ({
+      id: `e${i}`,
+      source: e.source,
+      target: e.target,
+      label: e.local_port || undefined,
+      remotePort: e.remote_port || undefined,
+      type: e.type,
+      confidence: e.confidence,
+      inferred: false,
+    }));
+}
+
+/**
  * Pure layout-prep. Input: the raw graph.json ({ nodes, edges }). Output:
  *   {
  *     nodes: [{ id, type, position:{x,y}, tier, data }],
@@ -330,11 +352,14 @@ export function pendantGroups(
  * not display hierarchy (it stays on `data` for the detail panel).
  */
 export function layoutGraph(
-  graph: Pick<GraphResponse, "nodes" | "edges"> | null | undefined
+  graph: Pick<GraphResponse, "nodes" | "edges"> | null | undefined,
+  opts?: BandOptions
 ): LayoutResult {
   const nodes = (graph && graph.nodes) || [];
   const rawEdges = (graph && graph.edges) || [];
   if (!nodes.length) return { nodes: [], edges: [] };
+  // Nodes that carry a network role are drawn in role bands (bands.ts).
+  if (hasBands(graph)) return layoutBands({ nodes, edges: rawEdges }, opts);
 
   const adj = buildAdjacency(nodes, rawEdges);
   const root = pickRoot(nodes, adj);
@@ -460,19 +485,7 @@ export function layoutGraph(
 
   // Rendered edges: every confirmed link (inferred:false) plus the dashed
   // inferred links so the UI can style them as tentative.
-  const ids = new Set(nodes.map((n) => n.node_id));
-  const confirmed: LayoutEdge[] = rawEdges
-    .filter((e) => ids.has(e.source) && ids.has(e.target))
-    .map((e, i) => ({
-      id: `e${i}`,
-      source: e.source,
-      target: e.target,
-      label: e.local_port || undefined,
-      remotePort: e.remote_port || undefined,
-      type: e.type,
-      confidence: e.confidence,
-      inferred: false,
-    }));
+  const confirmed = confirmedEdges(nodes, rawEdges);
   const inferred: LayoutEdge[] = inferredEdges.map((ie, i) => ({
     id: `inf${i}`,
     source: ie.from,

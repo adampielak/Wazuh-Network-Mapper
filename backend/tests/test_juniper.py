@@ -502,3 +502,67 @@ class TestJunosStage(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestJunosConfigGate(Base):
+    """A configuration-conditioned record is dropped for a device whose
+    complete backup lacks the configuration (``--junos-config-index``)."""
+
+    CHASSIS = "00:00:5e:00:53:01"
+
+    def setUp(self):
+        super().setUp()
+        cna = self.cveorg.docs[IDS[0]]["containers"]["cna"]
+        cna["configurations"] = [{"lang": "en", "value": "[ system extended-echo ]"}]
+
+    def backup(self, extra=""):
+        return ("set version 20.2R2-S3.4\nset system host-name R1\n"
+                "set protocols bgp group G neighbor 192.0.2.1\n" + extra)
+
+    def index(self, text, condition_text="[ system extended-echo ]"):
+        from vulnmapper.devicecves import conditions, junosconfig
+        conds = {IDS[0]: conditions.parse([condition_text])}
+        entry = junosconfig.evaluate(text, conds, JUNOS_FW)
+        doc = junosconfig.build_index({self.CHASSIS: entry}, conds, "2026-11-09T00:00:00Z", 3)
+        return junosconfig.ConfigIndex(json.loads(json.dumps(doc)))
+
+    def stage(self, config_index):
+        node = dict(junos_node(), chassis_id=self.CHASSIS)
+        graph = {"nodes": [node], "edges": [], "metadata": {}}
+        client = nvd.NvdClient(transport=FakeNvd(cves={JUNOS_CPE: []}, clock=self.clock),
+                               clock=self.clock, api_key="k", use_env_key=False)
+        result = run_stage(graph, client, Cache(None, self.clock), self.records(), config_index)
+        return node, result
+
+    def test_absent_configuration_drops_the_record(self):
+        node, result = self.stage(self.index(self.backup()))
+        self.assertEqual(node["top_cves"], [])
+        self.assertEqual(node["cve_lookup"]["config"],
+                         {"complete": True, "reason": None, "excluded": [IDS[0]]})
+        cfg = result.block["juniper"]["config"]
+        self.assertEqual((cfg["devices"], cfg["complete"], cfg["excluded"],
+                          cfg["devices_with_exclusions"]), (1, 1, 1, 1))
+        self.assertEqual(cfg["index_generated_at"], "2026-11-09T00:00:00Z")
+
+    def test_present_configuration_keeps_the_record(self):
+        node, _ = self.stage(self.index(self.backup("set system extended-echo\n")))
+        self.assertEqual([c["cve"] for c in node["top_cves"]], [IDS[0]])
+        self.assertEqual(node["cve_lookup"]["config"]["excluded"], [])
+
+    def test_changed_record_text_keeps_the_record(self):
+        # the index read another condition text: fingerprints differ
+        node, _ = self.stage(self.index(self.backup(), "[ system services ssh ]"))
+        self.assertEqual([c["cve"] for c in node["top_cves"]], [IDS[0]])
+
+    def test_incomplete_backup_claims_nothing(self):
+        text = self.backup().replace("set version 20.2R2-S3.4", "set version 19.4R3.1")
+        node, result = self.stage(self.index(text))
+        self.assertEqual([c["cve"] for c in node["top_cves"]], [IDS[0]])
+        self.assertEqual(node["cve_lookup"]["config"]["reason"], "version_mismatch")
+        self.assertEqual(result.block["juniper"]["config"]["incomplete"], {"version_mismatch": 1})
+
+    def test_without_an_index_the_output_is_unchanged(self):
+        plain, plain_result = self.stage(None)
+        self.assertNotIn("config", plain["cve_lookup"])
+        self.assertNotIn("config", plain_result.block["juniper"])
+        self.assertEqual([c["cve"] for c in plain["top_cves"]], [IDS[0]])

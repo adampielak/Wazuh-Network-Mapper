@@ -537,6 +537,95 @@ class TestStage(unittest.TestCase):
                                                    "advisory": 0})
 
 
+def junos_config(**over):
+    """A small Junos switch: xe-0/0/1 up in VLAN 10, three ports without a
+    link since boot (xe-0/0/38 VLAN 10, mge-0/0/25 VLAN 20, xe-0/0/40 VLAN 10),
+    xe-0/0/48 the uplink."""
+    down = dict(admin=t.UP, oper=t.DOWN, last_change=0)
+    return config(interfaces={1: iface("xe-0/0/1"), 2: iface("xe-0/0/38", **down),
+                              3: iface("mge-0/0/25", **down), 4: iface("xe-0/0/40", **down),
+                              10: iface("xe-0/0/48")},
+                  bridge_ports={1: 1, 2: 2, 3: 3, 4: 4, 10: 10},
+                  pvid={1: 10, 2: 10, 3: 20, 4: 10, 10: 1}, vm_vlan=None, **over)
+
+
+JUNOS_META = {"xe-0/0/38": {"described": True, "trunk": False},
+              "mge-0/0/25": {"described": True, "trunk": True},
+              "xe-0/0/40": {"described": False, "trunk": False}}
+
+
+class TestJunosPortMeta(unittest.TestCase):
+    """The saved Junos configuration: a trunk is no access port, a port with a
+    description is assigned, not spare."""
+
+    def spare(self, vendor="Juniper", meta=None, cfg=None):
+        out = evaluate_device(switch(vendor, uplinks=("xe-0/0/48",)), cfg or junos_config(),
+                              False, vlans_in_use={20}, port_meta=meta)
+        return results(out)["spare-ports-in-used-vlan"], out
+
+    def test_without_meta_every_down_port_counts(self):
+        result, out = self.spare()
+        self.assertEqual(result, "fail")
+        ev = finding(out, "spare-ports-in-used-vlan")["evidence"]
+        self.assertEqual(ev["total"], 3)
+        self.assertNotIn("described_not_counted", ev)
+        self.assertNotIn("trunk_excluded", ev)
+
+    def test_trunk_and_described_ports_are_not_spare(self):
+        result, out = self.spare(meta=JUNOS_META)
+        self.assertEqual(result, "fail")
+        ev = finding(out, "spare-ports-in-used-vlan")["evidence"]
+        self.assertEqual(ev["ports"], [{"port": "xe-0/0/40", "vlan": 10}])
+        self.assertEqual((ev["total"], ev["described_not_counted"], ev["trunk_excluded"]), (1, 1, 1))
+
+    def test_pass_when_only_assigned_ports_are_down(self):
+        meta = dict(JUNOS_META, **{"xe-0/0/40": {"described": True, "trunk": False}})
+        result, out = self.spare(meta=meta)
+        self.assertEqual(result, "pass")
+        ev = next(c for c in out["config_checks"] if c["id"] == "spare-ports-in-used-vlan")
+        self.assertEqual(ev["result"], "pass")
+
+    def test_unit_zero_name_falls_back_to_the_port(self):
+        cfg = junos_config()
+        cfg["interfaces"][2] = iface("xe-0/0/38.0", oper=t.DOWN, last_change=0)
+        result, out = self.spare(meta=JUNOS_META, cfg=cfg)
+        ev = finding(out, "spare-ports-in-used-vlan")["evidence"]
+        self.assertEqual((ev["total"], ev["described_not_counted"]), (1, 1))
+
+    def test_other_vendors_ignore_the_meta(self):
+        _, with_meta = self.spare("Extreme", JUNOS_META)
+        _, without = self.spare("Extreme", None)
+        self.assertEqual(with_meta, without)
+
+    def test_trunk_excluded_from_every_port_check(self):
+        from vulnmapper.checklist.evaluate import DeviceChecker
+        checker = DeviceChecker(switch("Juniper", uplinks=("xe-0/0/48",)), junos_config(), False,
+                                port_meta=JUNOS_META)
+        self.assertEqual(checker.ports, [1, 2, 4])
+        self.assertEqual(checker.trunk_excluded, 1)
+
+    def test_stage_takes_ports_from_the_index(self):
+        class Index:
+            def ports(self, chassis_id):
+                return JUNOS_META if chassis_id == "jj" else None
+
+        def run(index):
+            graph = {"nodes": [{"node_id": "device:jj", "kind": "device", "pollable": True,
+                                "chassis_id": "jj", "role": "l2-switch", "vendor": "Juniper",
+                                "uplink_ports": ["xe-0/0/48"]},
+                               {"node_id": "host:1", "kind": "endpoint", "vlan": 20}]}
+            run_stage(graph, {"nodes": [{"chassis_id": "jj", "config_data": junos_config()}]},
+                      False, config_index=index)
+            return graph["nodes"][0]
+
+        plain, gated = run(None), run(Index())
+        ev = lambda n: next(f for f in n["config_findings"]  # noqa: E731
+                            if f["id"] == "spare-ports-in-used-vlan")["evidence"]
+        self.assertEqual(ev(plain)["total"], 3)
+        self.assertEqual(ev(gated)["total"], 1)
+        self.assertEqual(json.dumps(run(None), sort_keys=True), json.dumps(plain, sort_keys=True))
+
+
 NEW_DEVICE_FIELDS = {"config_checks", "config_findings", "config_summary"}
 
 

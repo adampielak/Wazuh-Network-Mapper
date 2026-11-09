@@ -165,7 +165,8 @@ class DeviceChecker:
     """
 
     def __init__(self, node: dict, config: Optional[dict], probe_enabled: bool,
-                 family: Optional[str] = None, port_test: bool = False, vlans_in_use=()) -> None:
+                 family: Optional[str] = None, port_test: bool = False, vlans_in_use=(),
+                 port_meta: Optional[dict] = None) -> None:
         self.node = node
         self.role, self.vendor = node.get("role"), node.get("vendor")
         self.config = normalise(config)
@@ -179,6 +180,26 @@ class DeviceChecker:
                         else None)
         self.ports, self.port_reason = (None, self.missing) if self.missing else \
             access_ports(self.config, node.get("uplink_ports"), self.vendor)
+        # Per-port facts from the device's saved configuration (Junos only):
+        # {ifname: {"described": bool, "trunk": bool}}. None: not known, and
+        # every check behaves as without it.
+        self.port_meta = port_meta if self.vendor == "Juniper" and port_meta else None
+        self.trunk_excluded = 0
+        if self.ports and self.port_meta:
+            # A trunk is no access port: its native VLAN is not an access VLAN.
+            kept = [i for i in self.ports if not self._meta(i).get("trunk")]
+            self.trunk_excluded = len(self.ports) - len(kept)
+            self.ports = kept
+
+    def _meta(self, if_index: int) -> dict:
+        """The saved-configuration facts of one port ({} when not known)."""
+        if not self.port_meta:
+            return {}
+        name = str(self._port_name(if_index)).strip()
+        meta = self.port_meta.get(name)
+        if meta is None and name.endswith(".0"):
+            meta = self.port_meta.get(name[:-2])     # the bridge reports unit 0
+        return meta if isinstance(meta, dict) else {}
 
     def _port_name(self, if_index: int) -> str:
         return self.config["interfaces"][if_index]["name"]
@@ -275,18 +296,25 @@ class DeviceChecker:
         in_use |= {vlan_of[i] for i in ports if ifs[i]["oper"] == t.UP and vlan_of.get(i)}
         unused = sorted({vlan_of[i] for i in ports if vlan_of.get(i)} - in_use)
         found = [i for i in spare if vlan_of.get(i) in in_use]
+        # A port with a description is assigned (a customer or service waiting
+        # for its link), not spare: reported, not counted.
+        described = [i for i in found if self._meta(i).get("described")]
+        found = [i for i in found if i not in described]
+        extra = {}
+        if self.port_meta is not None:
+            extra = {"described_not_counted": len(described), "trunk_excluded": self.trunk_excluded}
         if found:
             enabled = sum(ifs[i]["admin"] == t.UP for i in found)
             return FAIL, None, {
                 "ports": [{"port": self._port_name(i), "vlan": vlan_of[i]}
                           for i in found[:EVIDENCE_CAP]],
                 "total": len(found), "enabled": enabled, "shut_down": len(found) - enabled,
-                "down_recently_not_counted": recent, "unused_vlans": unused}
+                "down_recently_not_counted": recent, "unused_vlans": unused, **extra}
         if any(ifs[i]["oper"] is None for i in ports) or unclear \
-                or any(not vlan_of.get(i) for i in spare):
+                or any(not vlan_of.get(i) for i in spare if i not in described):
             return UNKNOWN, "port state, time of last change or VLAN was not read for every " \
                             "access port", None
-        return PASS, None, {"unused_vlans": unused}
+        return PASS, None, {"unused_vlans": unused, **extra}
 
     def default_vlan(self):
         vlan_of = self._vlan_of()
@@ -419,11 +447,14 @@ class DeviceChecker:
 
 def evaluate_device(node: dict, config: Optional[dict], probe_enabled: bool,
                     family: Optional[str] = None, port_test: bool = False,
-                    vlans_in_use=()) -> dict:
+                    vlans_in_use=(), port_meta: Optional[dict] = None) -> dict:
     """``{config_checks, config_findings, config_summary}`` for one polled device.
 
     ``node`` is the graph's device node (role, vendor, uplink_ports); ``config``
     the crawl's ``config_data`` (None: not collected); ``vlans_in_use`` the VLANs
-    in use anywhere in the graph (hosts learned on them, up layer-3 interfaces).
+    in use anywhere in the graph (hosts learned on them, up layer-3 interfaces);
+    ``port_meta`` the Junos saved-configuration port facts (trunk, described),
+    None when not known.
     """
-    return DeviceChecker(node, config, probe_enabled, family, port_test, vlans_in_use).evaluate()
+    return DeviceChecker(node, config, probe_enabled, family, port_test, vlans_in_use,
+                         port_meta).evaluate()

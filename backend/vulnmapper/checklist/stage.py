@@ -21,7 +21,8 @@ log = logging.getLogger("vulnmapper.checklist")
 
 
 def run_stage(graph: dict, network_doc: dict, probe_enabled: bool,
-              source: str = "scan", port_test: bool = False) -> StageResult:
+              source: str = "scan", port_test: bool = False,
+              config_index=None) -> StageResult:
     """Evaluate the checks for every polled device node of ``graph`` in place.
 
     The data comes from the network document (``config_data`` on each crawled
@@ -33,7 +34,9 @@ def run_stage(graph: dict, network_doc: dict, probe_enabled: bool,
       config_summary   {checks, results: {pass, fail, ...},
                         findings: {high, medium, low, advisory}}
 
-    A device that was not polled gets no checklist at all.
+    A device that was not polled gets no checklist at all. ``config_index``
+    (a Junos configuration index, optional) gives the port checks each
+    Juniper device's trunk and described ports when its backup is complete.
     """
     out = StageResult()
     config_by_chassis = {n.get("chassis_id"): n.get("config_data")
@@ -59,8 +62,9 @@ def run_stage(graph: dict, network_doc: dict, probe_enabled: bool,
             not_collected.append(node["node_id"])
         elif config.get("failed"):
             failed.append(node["node_id"])
+        port_meta = config_index.ports(node.get("chassis_id")) if config_index else None
         node.update(evaluate_device(node, config, probe_enabled, family_of(node),
-                                    port_test, vlans_in_use))
+                                    port_test, vlans_in_use, port_meta))
         checked += 1
         results.update(node["config_summary"]["results"])
         findings.update(node["config_summary"]["findings"])
@@ -85,7 +89,8 @@ def run_checklist(scan: "ScanContext") -> StageResult:
     """The pipeline's checklist stage, on the configuration data the crawl read."""
     args = scan.args
     result = run_stage(scan.document, scan.network_doc, args.check_default_communities,
-                       port_test=args.check_management_ports)
+                       port_test=args.check_management_ports,
+                       config_index=scan.junos_config())
     note = f"{plural(result.block['devices_checked'], 'device')} checked"
     if args.check_default_communities:
         note += "; " + (_default_community_note(scan.document)

@@ -71,7 +71,7 @@ describe('siteTabs and filterBySite on the banded fixture', () => {
     expect(v1.crossEdges).toBe(1);
     expect(v1.cross.get('S1:br0')).toEqual([{ tab: 'S2', peers: ['S2:br0'] }]);
     expect(v2.cross.get('S2:br0')).toEqual([{ tab: 'S1', peers: ['S1:br0'] }]);
-    expect(v1.graph.edges.every((x) => !(x.source.startsWith('S2') || x.target.startsWith('S2')))).toBe(true);
+    expect(v1.graph.edges.every((x: { source: string; target: string }) => !(x.source.startsWith('S2') || x.target.startsWith('S2')))).toBe(true);
   });
 
   it('keeps the whole graph on All', () => {

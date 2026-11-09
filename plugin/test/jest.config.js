@@ -1,6 +1,8 @@
 // Unit tests for the plugin's pure helpers, run with the dashboard's own jest
 // and babel setup. From the dashboard folder:
-//   node scripts/jest --config plugins/vulnmapper/test/jest.config.js
+//   node_modules/.bin/jest --config plugins/vulnmapper/test/jest.config.js
+// (not `node scripts/jest`: that script appends its own --config, and two
+// --config flags make jest fail with "argv.config.match is not a function")
 
 // The page snapshots show clock times, recorded in Pakistan time; every run
 // renders them there, so a machine in another zone (CI runs in UTC) matches.

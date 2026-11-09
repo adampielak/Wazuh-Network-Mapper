@@ -120,6 +120,14 @@ def trim_record(doc: dict) -> dict:
     }
 
 
+def _description(record: dict) -> str:
+    """A record's English description, or ""."""
+    for item in record.get("descriptions") or []:
+        if isinstance(item, dict) and str(item.get("lang") or "en").lower().startswith("en"):
+            return str(item.get("value") or "")
+    return ""
+
+
 class JuniperRecords:
     """Juniper's CVE records for one scan: the index and the records, cached,
     brought up to date once by :meth:`prepare`."""
@@ -356,7 +364,8 @@ class JuniperRecords:
             if record.get("state") != "PUBLISHED":
                 continue
             try:
-                status, _ = junos.decide(record.get(field) or [], v, model or "", evolved)
+                status, _ = junos.decide(record.get(field) or [], v, model or "", evolved,
+                                         _description(record))
             except (ValueError, TypeError, AttributeError, KeyError, IndexError):
                 status = junos.UNDECIDED       # a block this module cannot read: no claim
             if status == junos.AFFECTED:

@@ -256,6 +256,58 @@ class TestRules(unittest.TestCase):
         self.assertEqual(decide(b, "21.4R2.6", "srx345"), (AFFECTED, None))
         self.assertEqual(decide(b, "21.4R2.6", "mx204"), (UNAFFECTED, "platform"))
 
+    def test_platform_in_description_only(self):
+        desc = ("A Heap-based Buffer Overflow vulnerability in the SVR component of Juniper "
+                "Networks Junos OS on SRX Series allows an unauthenticated network attacker "
+                "to execute code.")
+        b = [block(rng("21.2", "21.2R3-S9"))]
+        v = junos.parse_device("21.2R3-S8.5")
+        self.assertEqual(junos.decide(b, v, "mx480", description=desc),
+                         (UNAFFECTED, "platform_description"))
+        self.assertEqual(junos.decide(b, v, "srx345", description=desc), (AFFECTED, None))
+        self.assertEqual(junos.decide(b, v, "VSRX", description=desc), (AFFECTED, None))
+        # a model this module cannot place still matches
+        self.assertEqual(junos.decide(b, v, "750-047862", description=desc), (AFFECTED, None))
+        # without the description the record applies to every model, as before
+        self.assertEqual(junos.decide(b, v, "mx480"), (AFFECTED, None))
+
+    def test_description_phrase_naming_no_family_does_not_restrict(self):
+        b = [block(rng("21.2", "21.2R3-S9"))]
+        v = junos.parse_device("21.2R3-S8.5")
+        for desc in ("Juniper Networks Junos OS on Junos Fusion satellite devices allows a local attacker",
+                     "Juniper Networks Junos OS on all platforms allows a local attacker",
+                     "An issue in Juniper Networks Junos OS allows an attacker on the network"):
+            self.assertEqual(junos.decide(b, v, "mx480", description=desc), (AFFECTED, None), desc)
+
+    def test_structured_platforms_win_over_the_description(self):
+        desc = "Juniper Networks Junos OS on SRX Series allows an attacker"
+        v = junos.parse_device("21.4R2.6")
+        b = [block(rng("21.4", "21.4R3-S5"), platforms=["MX Series"])]
+        self.assertEqual(junos.decide(b, v, "mx204", description=desc), (AFFECTED, None))
+        b = [block(rng("21.4", "21.4R3-S5"), product="Junos OS on MX Series")]
+        self.assertEqual(junos.decide(b, v, "mx204", description=desc), (AFFECTED, None))
+
+    def test_evolved_description(self):
+        desc = "Juniper Networks Junos OS and Junos OS Evolved on QFX5K-family platforms allows a peer"
+        b = [block(rng("22.2-EVO", "22.2R3-S1-EVO"), product="Junos OS Evolved")]
+        v = junos.parse_device("22.2R2-EVO", evolved=True)
+        self.assertEqual(junos.decide(b, v, "qfx5130-32cd", True, desc), (AFFECTED, None))
+        self.assertEqual(junos.decide(b, v, "ptx10003", True, desc),
+                         (UNAFFECTED, "platform_description"))
+
+    def test_description_platforms(self):
+        self.assertEqual(junos.description_platforms(
+            "Juniper Networks Junos OS on SRX Series allows an attacker to execute code"),
+            ["SRX Series"])
+        self.assertEqual(junos.description_platforms(
+            "Juniper Networks Junos OS on PTX10003, PTX10004, and PTX10008 allows an attacker"),
+            ["PTX10003, PTX10004, and PTX10008"])
+        self.assertEqual(junos.description_platforms(
+            "Junos OS on SRX 5000 Series allows a DoS. This issue affects Junos OS on SRX 5000 Series: 20.4"),
+            ["SRX 5000 Series", "SRX 5000 Series"])
+        self.assertEqual(junos.description_platforms("Juniper Networks Junos OS allows a DoS"), [])
+        self.assertEqual(junos.description_platforms(None), [])
+
     def test_other_branches_never_apply_to_a_regular_release(self):
         b = [block(rng("15.1X49", "15.1X49-D220"), rng("21.4-EVO", "21.4R3-S5-EVO"))]
         self.assertEqual(decide(b, "15.1R6-S4", "srx345"), (UNAFFECTED, None))

@@ -306,6 +306,22 @@ class TestPrepare(Base):
             jr.assess(v, "ex4300-48t")         # another model is assessed on its own
             self.assertEqual(decide.call_count, 2 * calls)
 
+    def test_platform_named_only_in_the_description(self):
+        from vulnmapper.devicecves import junos
+        jr = self.records()
+        jr.prepare()
+        jr.records = {"CVE-2026-0001": {
+            "id": "CVE-2026-0001", "state": "PUBLISHED",
+            "descriptions": [{"lang": "en", "value": "A flaw in Juniper Networks Junos OS on "
+                                                     "SRX Series allows an attacker to execute code."}],
+            "blocks": [{"vendor": "Juniper Networks", "product": "Junos OS",
+                        "versions": [{"version": "21.2", "lessThan": "21.2R3-S9",
+                                      "status": "affected", "versionType": "custom"}]}],
+            "evo_blocks": []}}
+        v = junos.parse_device("21.2R3-S8.5")
+        self.assertEqual(jr.assess(v, "mx480"), ([], []))
+        self.assertEqual([r["id"] for r in jr.assess(v, "srx345")[0]], ["CVE-2026-0001"])
+
 
 def junos_node(firmware=JUNOS_FW, model="mx204", node_id="device:00:00:5e:00:53:01"):
     return {"node_id": node_id, "kind": "device", "pollable": True, "status": "online",

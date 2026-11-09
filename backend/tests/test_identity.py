@@ -7,12 +7,15 @@ base MAC, chosen from its own interface MACs, now names it.
 
 import asyncio
 import unittest
+from unittest.mock import AsyncMock, patch
 
 from test_cdp import AP_IP, L2_CID, L3_CID, crawl, lab
 from vulnmapper.assemble import assemble
 from vulnmapper.liveness import liveness_pass
 from vulnmapper.network import parse
-from vulnmapper.network.identity import base_mac
+from vulnmapper.network import identity
+from vulnmapper.network.identity import base_mac, juniper_model
+from vulnmapper.network.snmp import OID_SYS_DESCR, OID_SYS_NAME, OID_SYS_OBJECT_ID
 
 AP_MAC = "54:75:d0:ab:bd:1a"        # Gi0 (and its sub-interfaces) of the access point
 AP_NODE = f"device:{AP_MAC}"
@@ -108,3 +111,55 @@ class TestNoMacAtAll(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestJuniperModel(unittest.TestCase):
+    """A Juniper chassis that reports a part number as its inventory model
+    name gets the model its sysDescr names."""
+
+    MX = "Juniper Networks, Inc. mx480 internet router, kernel JUNOS 21.2R3-S8.5, Build date: 2025-01-01"
+
+    def test_part_number_replaced_by_sysdescr_model(self):
+        self.assertEqual(juniper_model("750-047862", self.MX), "mx480")
+
+    def test_missing_model_filled_from_sysdescr(self):
+        self.assertEqual(juniper_model(None, self.MX), "mx480")
+
+    def test_real_model_kept(self):
+        self.assertEqual(juniper_model("MX10003", self.MX), "MX10003")
+        self.assertEqual(juniper_model("ex3300-48t", self.MX), "ex3300-48t")
+
+    def test_unplaceable_sysdescr_token_keeps_the_model(self):
+        descr = "Juniper Networks, Inc. jnp10003 internet router"
+        self.assertEqual(juniper_model("750-047862", descr), "750-047862")
+        self.assertIsNone(juniper_model(None, "Juniper Networks, Inc."))
+        self.assertEqual(juniper_model("750-047862", None), "750-047862")
+
+    def test_family_check_agrees_with_devicecves(self):
+        from vulnmapper.devicecves.junos import model_family
+        for token in ("mx480", "srx345", "SRX340", "VSRX", "qfx5110-48s-4c", "ex3300-48t",
+                      "ptx10003", "acx710", "jnp10003", "750-047862", "m320", "exa1"):
+            descr = f"Juniper Networks, Inc. {token} internet router"
+            placed = model_family(token) is not None
+            self.assertEqual(juniper_model(None, descr), token if placed else None, token)
+
+    def _fetch(self, sys_descr, sys_object_id, inventory):
+        values = {OID_SYS_DESCR: sys_descr, OID_SYS_OBJECT_ID: sys_object_id,
+                  OID_SYS_NAME: "dev1"}
+
+        class Client:
+            async def get_many(self, ip, oids):
+                return {oid: values.get(oid) for oid in oids}
+
+        with patch("vulnmapper.network.entity.collect_inventory",
+                   AsyncMock(return_value=inventory)):
+            return asyncio.run(identity.fetch(Client(), "192.0.2.1"))
+
+    def test_fetch_uses_sysdescr_model_for_juniper_part_number(self):
+        got = self._fetch(self.MX, "1.3.6.1.4.1.2636.1.1.1.2.25", {"model": "750-047862"})
+        self.assertEqual((got["vendor"], got["model"]), ("Juniper", "mx480"))
+
+    def test_fetch_leaves_other_vendors_alone(self):
+        descr = "Arista Networks EOS version 4.30 running on an Arista DCS-7050"
+        got = self._fetch(descr, "1.3.6.1.4.1.30065.1.1", {"model": "750-047862"})
+        self.assertEqual(got["model"], "750-047862")

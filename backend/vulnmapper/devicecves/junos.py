@@ -52,8 +52,15 @@ How one record decides a device (:func:`decide`):
     statement over several platform blocks, and a train fixed or stated
     unaffected in one of them is assessed.
 
-Platform phrases that appear only in the description text (no structured
-field) are not read, so a CVE limited that way is reported for every model.
+A record with no platform text at all (no ``platforms`` field, no "on ..."
+in a product name or a version entry) may still name its platforms in the
+description: "Juniper Networks Junos OS on SRX Series allows ...". Only then is
+the description read (:func:`description_platforms`): the phrase that directly
+follows "Junos OS [Evolved] on", cut before its verb. A model outside every
+platform it names gives UNAFFECTED (``platform_description``). A phrase naming
+no recognised family ("Junos Fusion satellite devices", "all platforms") and a
+model that cannot be placed keep the CVE, as with structured platform text.
+Platform words elsewhere in the description are not read.
 """
 
 from __future__ import annotations
@@ -508,6 +515,35 @@ def _named_trains(entries: list) -> set:
     return out
 
 
+_DESC_PLATFORM = re.compile(
+    r"\bJunos OS(?: Evolved)?(?: and Junos OS Evolved)?\s+on\s+(.+?)"
+    r"(?=\s+(?:allows?|could|can|may|might|which|that|when|where|via|is|are|has|have|to)\b|[.;:]|$)",
+    re.I)
+
+
+def description_platforms(text: str) -> list:
+    """The platform phrases a description names right after "Junos OS on",
+    "Junos OS Evolved on" or "Junos OS and Junos OS Evolved on", each cut
+    before its verb: "... Junos OS on SRX Series allows ..." -> ["SRX Series"]."""
+    return [p.strip() for p in _DESC_PLATFORM.findall(str(text or "")) if p.strip()]
+
+
+def _has_platform_text(blocks: list) -> bool:
+    """Whether any block, or any version entry of one, states platforms."""
+    for block in blocks:
+        if block.get("platforms") or re.search(r"\bon\s+", str(block.get("product") or "")):
+            return True
+        for raw in block.get("versions") or []:
+            if not isinstance(raw, dict):
+                continue
+            try:
+                if normalise(raw)["on"]:
+                    return True
+            except Unparsed:
+                continue
+    return False
+
+
 def _block_applies(block: dict, model: str) -> bool:
     product = str(block.get("product") or "")
     on = re.search(r"\bon\s+(.+)$", product)
@@ -581,14 +617,21 @@ def evo_blocks(affected) -> list:
         if isinstance(affected, list) else []
 
 
-def decide(blocks: list, v: Release, model: str, evolved: bool = False) -> tuple:
+def decide(blocks: list, v: Release, model: str, evolved: bool = False,
+           description: str = "") -> tuple:
     """``(status, why)`` the Junos OS ``blocks`` of one record give a device
     running ``v`` (:func:`parse_device`): AFFECTED, UNAFFECTED or UNDECIDED, or
     ``(None, None)`` when there are no blocks. ``why`` names the rule that
     decided, or None. ``evolved``: ``blocks`` are Evolved blocks
-    (:func:`evo_blocks`) and ``v`` an Evolved release."""
+    (:func:`evo_blocks`) and ``v`` an Evolved release. ``description``: the
+    record's English description, read for platforms only when no block
+    states any."""
     if not blocks:
         return None, None
+    if description and not _has_platform_text(blocks):
+        texts = description_platforms(description)
+        if texts and not platform_matches(model or "", texts):
+            return UNAFFECTED, "platform_description"
     if evolved:
         blocks = [_as_regular(b) for b in blocks]
     named = frozenset(_record_trains(blocks, model or ""))

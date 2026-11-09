@@ -71,7 +71,9 @@ def vendor_from_descr(sys_descr: Optional[str]) -> Optional[str]:
 
 
 _JUNIPER_PART_NUMBER = re.compile(r"^\d{3}-\d{6}$")
-_JUNIPER_DESCR_MODEL = re.compile(r"^Juniper Networks, Inc\.\s+(\S+)\s")
+# Some chassis name a product number first and the model in brackets:
+# "Juniper Networks, Inc. JNP10003 [MX10003] internet router, ...".
+_JUNIPER_DESCR_MODEL = re.compile(r"^Juniper Networks, Inc\.\s+(\S+)(?:\s+\[([^\]\s]+)\])?\s")
 # The platform families devicecves.junos places. Kept here because the
 # collector hosts run the crawl without the devicecves.junos module.
 _JUNOS_FAMILY = re.compile(
@@ -81,14 +83,17 @@ _JUNOS_FAMILY = re.compile(
 def juniper_model(model: Optional[str], sys_descr: Optional[str]) -> Optional[str]:
     """A Juniper device's model. Some chassis report a part number
     ("750-047862") as the inventory model name; their sysDescr names the
-    model ("Juniper Networks, Inc. mx480 internet router, ..."). The sysDescr
-    model replaces a missing or part-number model, and only when it names a
-    Junos platform family; anything else keeps the model as read."""
+    model ("Juniper Networks, Inc. mx480 internet router, ..."), or a product
+    number followed by the model in brackets ("JNP10003 [MX10003]"). The
+    sysDescr model replaces a missing or part-number model, and only when it
+    names a Junos platform family; anything else keeps the model as read."""
     if model and not _JUNIPER_PART_NUMBER.match(model.strip()):
         return model
     m = _JUNIPER_DESCR_MODEL.match(sys_descr or "")
-    if m and _JUNOS_FAMILY.match(m.group(1)):
-        return m.group(1)
+    if m:
+        for candidate in (m.group(1), m.group(2)):
+            if candidate and _JUNOS_FAMILY.match(candidate):
+                return candidate
     return model
 
 

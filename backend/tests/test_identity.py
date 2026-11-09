@@ -135,6 +135,17 @@ class TestJuniperModel(unittest.TestCase):
         self.assertIsNone(juniper_model(None, "Juniper Networks, Inc."))
         self.assertEqual(juniper_model("750-047862", None), "750-047862")
 
+    def test_bracketed_model_after_product_number(self):
+        descr = ("Juniper Networks, Inc. JNP10003 [MX10003] internet router, kernel JUNOS "
+                 "20.4R3-S6.3, Build date: 2023-01-12 20:26:57 UTC")
+        self.assertEqual(juniper_model("750-074276", descr), "MX10003")
+        self.assertEqual(juniper_model(None, descr), "MX10003")
+        self.assertEqual(juniper_model("MX10003", descr), "MX10003")
+
+    def test_unplaceable_bracketed_model_keeps_the_model(self):
+        descr = "Juniper Networks, Inc. JNP10003 [M10003] internet router"
+        self.assertEqual(juniper_model("750-074276", descr), "750-074276")
+
     def test_family_check_agrees_with_devicecves(self):
         from vulnmapper.devicecves.junos import model_family
         for token in ("mx480", "srx345", "SRX340", "VSRX", "qfx5110-48s-4c", "ex3300-48t",

@@ -100,8 +100,8 @@ export function siteTabs(graph: G, minNodes = MIN_SITE_NODES): string[] {
 
 export type CrossLink = { tab: string; peers: string[] };
 
-export type SiteView = {
-  graph: G;
+export type SiteView<T extends G = G> = {
+  graph: T;
   /** per node: links leaving this tab, grouped by the tab on the far side */
   cross: Map<string, CrossLink[]>;
   /** edges between two different tabs over the whole graph */
@@ -113,7 +113,7 @@ export type SiteView = {
  * a link into another tab is listed in `cross`, with the peers it links to.
  * The "All" tab returns the whole graph unchanged and no badges.
  */
-export function filterBySite(graph: G, tab: string, minNodes = MIN_SITE_NODES): SiteView {
+export function filterBySite<T extends G>(graph: T, tab: string, minNodes = MIN_SITE_NODES): SiteView<T> {
   const tabs = tabOf(siteOf(graph), minNodes);
   const nameOf = new Map(graph.nodes.map((n) => [n.node_id, n.hostname || n.node_id]));
   let crossEdges = 0;
@@ -141,7 +141,7 @@ export function filterBySite(graph: G, tab: string, minNodes = MIN_SITE_NODES): 
     return { graph, cross: new Map(), crossEdges };
   }
   return {
-    graph: { nodes: graph.nodes.filter((n) => tabs.get(n.node_id) === tab), edges },
+    graph: { ...graph, nodes: graph.nodes.filter((n) => tabs.get(n.node_id) === tab), edges },
     cross: new Map(
       [...cross].map(([id, m]) => [id, [...m].map(([t, peers]) => ({ tab: t, peers }))])
     ),

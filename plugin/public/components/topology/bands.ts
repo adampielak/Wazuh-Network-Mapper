@@ -75,10 +75,11 @@ export function hasBands(graph: G | null | undefined): boolean {
 }
 
 /** The graph without ISP nodes and the links that touch them. */
-export function withoutIsp(graph: G): G {
+export function withoutIsp<T extends G>(graph: T): T {
   const isp = new Set(graph.nodes.filter((n) => n.net_role === "ISP").map((n) => n.node_id));
   if (!isp.size) return graph;
   return {
+    ...graph,
     nodes: graph.nodes.filter((n) => !isp.has(n.node_id)),
     edges: graph.edges.filter((e) => !isp.has(e.source) && !isp.has(e.target)),
   };

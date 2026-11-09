@@ -31,6 +31,11 @@ statement leaves out (``[ interfaces <interface> family inet6 ]`` against
 statement placed under ``routing-instances``, ``logical-systems`` or
 ``groups``. A placeholder (``<name>``, a token with a ``/`` or a quote) stands
 for exactly one token. Literal tokens compare case-insensitively.
+
+The token after a hierarchy in :data:`NAMED_LEVELS` is always a user-chosen
+name, so it is read as a placeholder whatever the text says: the vendor writes
+example names there (``[ routing-instances evpna instance-type evpn ]``) or
+leaves the name out (``[ routing-instances  protocols evpn ]``).
 """
 
 from __future__ import annotations
@@ -53,6 +58,9 @@ TOP_LEVEL = frozenset({
     "routing-options", "security", "services", "snmp", "switch-options", "system",
     "virtual-chassis", "vlans",
 })
+
+# top-level hierarchies whose next token is a user-chosen name
+NAMED_LEVELS = frozenset({"bridge-domains", "logical-systems", "routing-instances", "vlans"})
 
 # a statement line: "[ a b c ]" (optionally "[edit a b c]", optionally a
 # trailing "or"), or "set a b c"
@@ -100,6 +108,8 @@ def _statement(body: str) -> Optional[tuple]:
         tokens = tokens[1:]
     if len(tokens) > 1 and tokens[0] == "interfaces" and _IFNAME.match(tokens[1]):
         tokens[1] = ANY     # "interfaces ae0": an example name, not a requirement
+    if len(tokens) > 1 and tokens[0] in NAMED_LEVELS:
+        tokens[1] = ANY     # "routing-instances evpna": an example name, or the name left out
     if not tokens or tokens[0] not in TOP_LEVEL:
         return None
     anchor, literals = [], 0

@@ -94,6 +94,17 @@ class TestParse(unittest.TestCase):
         self.assertEqual(c.parse(["[ interfaces ae0 aggregated-ether-options lacp ]"]).statements,
                          (("interfaces", ANY, "aggregated-ether-options"),))
 
+    def test_named_level_second_token_is_a_placeholder(self):
+        self.assertEqual(c.parse(["[ routing-instances evpna instance-type evpn ]"]).statements,
+                         (("routing-instances", ANY, "instance-type"),))
+        self.assertEqual(c.parse(["[ routing-instances  protocols evpn ip-prefix-routes ]"]).statements,
+                         (("routing-instances", ANY, "evpn"),))
+        self.assertEqual(c.parse(["[ set vlans private-vlan isolated ]"]).statements,
+                         (("vlans", ANY, "isolated"),))
+        self.assertEqual(c.parse(["[ vlans <v> forwarding-options dhcp-security ]"]).statements,
+                         (("vlans", ANY, "forwarding-options"),))
+        self.assertIsNone(c.parse(["[ logical-systems LS1 ]"]))
+
     def test_ambiguous(self):
         for v in [
             "This vulnerability is only exploitable on interfaces with LLDP enabled.\n\n"
@@ -154,6 +165,8 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(st("[ protocols ospf area ]"), "present")       # under a routing instance
         self.assertEqual(st("[ protocols lldp ]"), "inactive_only")
         self.assertEqual(st("[ protocols isis ] or\n[ protocols bgp ]"), "present")
+        self.assertEqual(st("[ routing-instances evpna protocols ospf ]"), "present")   # example name
+        self.assertEqual(st("[ routing-instances evpna instance-type evpn ]"), "absent")
 
     def test_evaluate(self):
         e = jc.evaluate(CONFIG, conds(CVE_1=["[ system extended-echo ]"],

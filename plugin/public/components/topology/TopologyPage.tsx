@@ -32,6 +32,7 @@ import { MapLegend } from './MapLegend';
 import { hiddenKeyOf, offlineHosts, visibleSelection } from './inactive';
 import { BandOptions, withoutIsp } from './bands';
 import { ALL_SITES, filterBySite, siteOf, siteTabs, tabOf } from './site';
+import { filterByProject, isProjectTab, projectOfTab, projectTabs } from './project';
 
 const TAB_KEY = 'vulnmapper.topology.site';
 const DEFAULT_TAB = 'DC1';
@@ -172,16 +173,26 @@ export function TopologyPage() {
   // Site tabs, from nodes that carry a site. The ISP row is off by default and
   // is cut out before the tabs are counted, so a tab's count matches what it draws.
   const base = useMemo(() => (graph && !showIsp ? withoutIsp(graph) : graph), [graph, showIsp]);
-  const tabs = useMemo(() => (base ? siteTabs(base) : []), [base]);
+  // Project tabs follow the site tabs. A project only picks members out of
+  // the graph, so with projects but no sites the map still gets an All tab.
+  const tabs = useMemo(() => {
+    if (!base) return [];
+    const sites = siteTabs(base);
+    const projects = projectTabs(base);
+    return projects.length && !sites.length ? [ALL_SITES, ...projects] : [...sites, ...projects];
+  }, [base]);
   const tab = tabs.includes(tabChoice || '') ? tabChoice! : tabs.includes(DEFAULT_TAB) ? DEFAULT_TAB : tabs[0];
-  const siteView = useMemo(() => (base && tab ? filterBySite(base, tab) : null), [base, tab]);
+  const siteView = useMemo(
+    () => (base && tab ? (isProjectTab(tab) ? filterByProject(base, tab) : filterBySite(base, tab)) : null),
+    [base, tab]
+  );
   const shown = siteView ? siteView.graph : graph;
   const hasIsp = !!graph && graph.nodes.some((n) => n.net_role === 'ISP');
   const layoutOptions = useMemo<BandOptions>(
     () => ({
       showIsp,
       laneOf: base && tab === ALL_SITES ? tabOf(siteOf(base)) : undefined,
-      laneOrder: tabs.filter((t) => t !== ALL_SITES),
+      laneOrder: tabs.filter((t) => t !== ALL_SITES && !isProjectTab(t)),
     }),
     [showIsp, base, tab, tabs]
   );
@@ -276,9 +287,9 @@ export function TopologyPage() {
                 setTabChoice(t);
                 setSelectedId(null);
               }}
-              data-test-subj={`vmSiteTab-${t}`}
+              data-test-subj={isProjectTab(t) ? `vmProjectTab-${projectOfTab(t)}` : `vmSiteTab-${t}`}
             >
-              {t}
+              {isProjectTab(t) ? projectOfTab(t) : t}
             </EuiTab>
           ))}
         </EuiTabs>

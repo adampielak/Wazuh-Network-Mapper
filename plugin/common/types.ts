@@ -77,6 +77,10 @@ type SiteFields = {
   site_source?: NetSource | null;
   net_role?: NetRole | null;
   net_role_source?: NetSource | null;
+  // Projects the node belongs to (e.g. a customer installation). A project is
+  // a cross-cutting group with its own tab; it does not move the node off its
+  // site tab.
+  projects?: string[] | null;
 };
 
 // Common fields shared by both kinds of node.

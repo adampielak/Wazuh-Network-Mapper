@@ -33,10 +33,10 @@ def _to_bytes(raw) -> bytes:
 
     Handles the common renderings: a ``0x2800`` hex string, bare/space/colon
     separated hex, or an actual ``bytes`` value. Anything that isn't clean even-
-    length hex yields no bytes (caps simply unknown — never a false positive).
+    length hex yields no bytes (caps simply unknown, never a false positive).
 
     The printable-octet trap: a 1-octet capability map whose byte is a printable
-    ASCII character is rendered by SNMP as that literal character — e.g. an L3
+    ASCII character is rendered by SNMP as that literal character, e.g. an L3
     switch's ``0x28`` (Bridge+Router) comes through as ``"("``. HP Comware (and
     some Cisco) advertise a single-octet map, so the hex path above silently
     misses it and the device would be mis-roled as unknown. A short (<=2 char)
@@ -57,7 +57,9 @@ def _to_bytes(raw) -> bytes:
             return b""
     # Not hex: a capability map is at most 2 octets, so a short literal string is
     # the printable-octet rendering. Longer non-hex input is genuine garbage.
-    literal = str(raw).strip()
+    # Not stripped: 0x20 (Bridge only) renders as " ", and stripping it would
+    # leave nothing, so an L2 switch would lose its role.
+    literal = str(raw)
     if 1 <= len(literal) <= 2:
         return literal.encode("latin-1", "ignore")
     return b""
@@ -94,7 +96,7 @@ def role_from_capabilities(caps: set[str]) -> Optional[str]:
 
 
 # Label for a polled device we cannot positively classify. We deliberately do
-# not guess a type from the vendor (e.g. "Fortinet must be a firewall") — that is
+# not guess a type from the vendor (e.g. "Fortinet must be a firewall"), that is
 # an inference, not evidence. If a device doesn't tell us what it is via LLDP, we
 # say so honestly.
 UNKNOWN_DEVICE = "Unknown Network Device"

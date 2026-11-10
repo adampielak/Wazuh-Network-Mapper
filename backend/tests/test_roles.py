@@ -41,6 +41,16 @@ class TestDecodeCapabilities(unittest.TestCase):
         # Longer non-hex input is still genuine garbage, never a false positive.
         self.assertEqual(decode_capabilities("router"), set())
 
+    def test_space_octet_is_bridge(self):
+        # 0x20 (Bridge only) is the printable octet " ". Stripping whitespace
+        # before the literal fallback turned it into "" and the switch into an
+        # Unknown Network Device (HP 2620 and Brocade switches).
+        self.assertEqual(decode_capabilities(" "), {"bridge"})
+        self.assertEqual(decode_capabilities("  "), {"bridge"})  # 0x2020
+        self.assertEqual(role_from_capabilities(decode_capabilities(" ")), "l2-switch")
+        # Whitespace around a hex rendering is still trimmed.
+        self.assertEqual(decode_capabilities(" 0x28 "), {"bridge", "router"})
+
 
 class TestRoleFromCapabilities(unittest.TestCase):
     def test_mapping(self):

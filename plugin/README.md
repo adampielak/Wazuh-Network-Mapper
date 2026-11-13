@@ -27,7 +27,7 @@ is unchanged.
 | Component | Version |
 |---|---|
 | OpenSearch Dashboards | 2.19.3 |
-| Wazuh dashboard | 4.14.0 / 4.14.1 (based on OpenSearch Dashboards 2.19.3) |
+| Wazuh dashboard | 4.14.0 / 4.14.1 (based on OpenSearch Dashboards 2.19.3); 4.14.8 to 4.14.10 with a build for OpenSearch Dashboards 2.19.6 (`OSD_VERSION=2.19.6`) |
 | React / React DOM | 16.14 (from the dashboard) |
 | react-router-dom | 5.3 (from the dashboard) |
 | OUI (`@elastic/eui`) | 1.19.0 (from the dashboard) |

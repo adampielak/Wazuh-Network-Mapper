@@ -47,7 +47,7 @@ scripts/   start the dashboard with the plugin, build and install the plugin
 ## Running it
 
 Requirements: Python 3.10 or later; OpenSearch Dashboards 2.19.3 for
-development (the Wazuh dashboard 4.14.8 is built on 2.19.6) and Node.js
+development (the Wazuh dashboard 4.14.8 to 4.14.10 is built on 2.19.6) and Node.js
 18.19.0 for the plugin.
 
 Scanner, from `backend/`:
@@ -71,7 +71,7 @@ building the zip.
 
 The zip only installs into the exact dashboard version it was built for.
 `scripts/send-plugin.sh` builds for 2.19.3 by default; for the Wazuh dashboard
-4.14.8 build `vulnmapper-2.19.6.zip` with:
+4.14.8 to 4.14.10 build `vulnmapper-2.19.6.zip` with:
 
 ```
 OSD_VERSION=2.19.6 ./scripts/send-plugin.sh
@@ -102,7 +102,7 @@ removes it with the data folder.
 
 ## Install into Wazuh
 
-For the lab's Wazuh dashboard 4.14.8 (OpenSearch Dashboards 2.19.6, HTTPS on
+For the lab's Wazuh dashboard 4.14.8 to 4.14.10 (OpenSearch Dashboards 2.19.6, HTTPS on
 443, security plugin on). On the development machine, build and send the zip:
 
 ```

@@ -3,6 +3,7 @@
 import unittest
 
 from vulnmapper.assemble import assemble
+from vulnmapper.assemble.nodes import device_node
 
 # CYFOR-1's real NIC MAC == the chassis_id of the phantom LLDP device node.
 CYFOR1_MAC = "d4:be:d9:98:2e:d4"
@@ -72,6 +73,19 @@ class TestParentingLadder(unittest.TestCase):
         self.assertNotIn(f"device:{CYFOR1_MAC}", self.by_id)
         self.assertIn("endpoint:004", self.by_id)
         self.assertEqual(self.by_id["endpoint:004"]["kind"], "endpoint")
+
+    def test_device_node_copies_vlan_membership_without_aliasing(self):
+        membership = {"source": "q-bridge", "vlans": {"10": {
+            "tagged": ["Gi0/1"], "untagged": []}}, "pvid": {}}
+        node = device_node({"chassis_id": "synthetic-router",
+                            "vlan_membership": membership})
+        self.assertEqual(node.to_dict()["vlan_membership"], membership)
+        self.assertIsNot(node.vlan_membership, membership)
+        self.assertIsNot(node.vlan_membership["vlans"], membership["vlans"])
+
+        absent = device_node({"chassis_id": "synthetic-router-without-membership"})
+        self.assertIsNone(absent.vlan_membership)
+        self.assertNotIn("vlan_membership", absent.to_dict())
 
     def test_tier1_lldp_parent_with_switch_port(self):
         edge = self.ep_edges["endpoint:004"]

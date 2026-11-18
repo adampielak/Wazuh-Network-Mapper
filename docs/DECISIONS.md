@@ -39,6 +39,23 @@ rather than walking `dot1qPvid` again; it likewise reuses the `ifName` and
 Vendor-specific membership tables are an extension point; vendor fallbacks:
 pending A5.
 
+## B9. Router sides use the router's Q-BRIDGE membership when available
+
+For a router neighbor edge whose router-side port is not a base interface
+matched by an up sub-interface, the attack-path evaluator uses the router's
+own `vlan_membership`. A normalized port listed as tagged or untagged for the
+VLAN is an observed router side. If that named port is present for another
+VLAN, or its PVID identifies another VLAN, the side is omitted for this VLAN.
+Ports absent from the membership, unmapped `bridge_port:<n>` names, and routers
+without membership retain the inferred side. The evaluator does not guess a
+mapping for an unmapped bridge port. Port names are compared after the same
+normalization on both the edge and membership data.
+
+Evidence precedence is sub-interface evidence, then Q-BRIDGE membership, then
+inference. A sub-interface match retains its existing behavior even when
+Q-BRIDGE data is also present. Only the router's own membership is used to
+classify its side; the neighboring switch's membership is a later step.
+
 ## B7. Exposure is an opt-in pipeline stage
 
 Without `--zones`, the scan records no exposure stage or timing entry, preserving

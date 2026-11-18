@@ -343,6 +343,29 @@ class AttackPathEngine:
             return {self._vlan_key(node, vid, component): "inferred" for vid in vlans}
 
         port_interfaces, subinterface_bases = self._subinterface_ports(node, vlans)
+        membership = node.get("vlan_membership")
+        membership_ports_by_vlan: dict[int, set[str]] = {}
+        membership_vlans_by_port: dict[str, set[int]] = {}
+        if membership:
+            for raw_vid, entry in (membership.get("vlans") or {}).items():
+                try:
+                    vid = int(raw_vid)
+                except (TypeError, ValueError):
+                    continue
+                ports = {self._normalise_port(port)
+                         for mode in ("tagged", "untagged")
+                         for port in (entry.get(mode) or [])}
+                ports.discard(None)
+                membership_ports_by_vlan[vid] = ports
+                for port in ports:
+                    membership_vlans_by_port.setdefault(port, set()).add(vid)
+            pvid = membership.get("pvid") or {}
+            pvid_by_port = {self._normalise_port(port): int(vid)
+                            for port, vid in pvid.items()
+                            if self._normalise_port(port) is not None and
+                            str(vid).isdigit()}
+        else:
+            pvid_by_port = {}
         for edge, other, component in neighbours:
             neighbor = self.by_id[other]
             side_vids = self.component_vlans.get((neighbor.get("site"), component), set())
@@ -354,7 +377,19 @@ class AttackPathEngine:
                         continue
                     confidence = "observed"
                 else:
-                    confidence = "inferred"
+                    if membership and edge_port and not edge_port.startswith("bridge_port:"):
+                        if edge_port in membership_ports_by_vlan.get(vid, set()):
+                            confidence = "observed"
+                        elif (vid in membership_vlans_by_port.get(edge_port, set()) or
+                              pvid_by_port.get(edge_port) == vid):
+                            confidence = "inferred"
+                        elif (membership_vlans_by_port.get(edge_port) or
+                              edge_port in pvid_by_port):
+                            continue
+                        else:
+                            confidence = "inferred"
+                    else:
+                        confidence = "inferred"
                 key = (neighbor.get("site"), component, vid)
                 if key not in sides or confidence == "observed":
                     sides[key] = confidence

@@ -5,6 +5,7 @@ point's client list or a neighbour announcement).
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Optional
 
 from ..network.roles import decode_capabilities, derive_role
@@ -69,6 +70,7 @@ def device_node(raw: dict) -> Node:
         port_status=raw.get("port_status") or {},
         # copied: the assembler stamps each port's state on these
         ports=[dict(p) for p in raw["ports"]] if raw.get("ports") else None,
+        vlan_membership=deepcopy(raw.get("vlan_membership")),
         risk_score=raw.get("risk_score"),
         software_family=raw.get("software_family"),
     )

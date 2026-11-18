@@ -95,6 +95,7 @@ from .collect import (
     collect_ifname_map,
     collect_own_macs,
     collect_port_status,
+    collect_port_tables,
     collect_ports,
     collect_vlan_membership,
     collect_wifi_clients,

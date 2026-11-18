@@ -8,7 +8,7 @@ import re
 from typing import Optional
 
 from ...schema import canonical_mac
-from .text import index_after, mac_from_decimal_octets
+from .text import index_after, mac_from_decimal_octets, octets
 
 # Walk bases (no trailing dot).
 DOT1Q_FDB_PORT_BASE = "1.3.6.1.2.1.17.7.1.2.2.1.2"   # dot1qTpFdbPort
@@ -73,21 +73,12 @@ def decode_portlist(value: Optional[str]) -> list[int]:
     """Decode an SNMP Q-BRIDGE PortList into ascending bridge port numbers."""
     if value is None:
         return []
-    if isinstance(value, bytes):
-        octets = value
-    else:
-        raw = str(value).strip()
-        if not raw:
-            return []
-        raw = re.sub(r"^(?:hex-string:|0x)", "", raw, flags=re.IGNORECASE).strip()
-        compact = re.sub(r"\s+", "", raw)
-        try:
-            octets = bytes.fromhex(compact)
-        except ValueError:
-            return []
-
+    # The SNMP layer renders an OctetString as ``0x<hex>`` only when it holds a
+    # non-printable byte; an all-printable PortList arrives as its raw text
+    # (b"@" as "@"), so a bare string is never read as hex digits.
+    data = value if isinstance(value, bytes) else octets(value)
     return [octet_index * 8 + bit_index + 1
-            for octet_index, octet in enumerate(octets)
+            for octet_index, octet in enumerate(data)
             for bit_index in range(8) if octet & (0x80 >> bit_index)]
 
 
@@ -159,10 +150,8 @@ def build_vlan_membership(
             if bridge_port not in bridge_to_ifindex:
                 unmapped.add(bridge_port)
 
-    for port_lists in vlans.values():
-        for port in port_lists["tagged"] + port_lists["untagged"]:
-            if port.startswith("bridge_port:"):
-                unmapped.add(port.split(":", 1)[1])
+    for _, ports in list(egress.values()) + list(untagged.values()):
+        unmapped.update(str(port) for port in ports if str(port) not in bridge_to_ifindex)
     if not egress_rows and not untagged_rows and not pvid_rows and not pvid_map:
         return None
     return {"source": "q-bridge", "vlans": vlans, "pvid": dict(sorted(pvid.items())),

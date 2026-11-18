@@ -12,7 +12,11 @@ multiple TimeMarks, collection keeps the row with the highest TimeMark. The
 PortList bit order follows RFC 4363 section 3.3: each octet represents eight
 bridge ports, with its most significant bit representing the lowest port
 number. `dot1qVlanCurrentEgressPorts` and
-`dot1qVlanCurrentUntaggedPorts` are defined in RFC 4363 section 5.
+`dot1qVlanCurrentUntaggedPorts` are defined in RFC 4363 section 5. The SNMP
+layer renders an OctetString as `0x<hex>` only when it holds a non-printable
+byte; an all-printable PortList (for example one octet `0x40`, port 2) arrives
+as its raw text `@`. The decoder therefore reads `0x<hex>` as hex and any other
+string as raw octets, never bare text as hex digits.
 
 The network node field is optional and has this shape:
 
@@ -27,9 +31,11 @@ The network node field is optional and has this shape:
 
 Tagged membership is egress membership minus untagged membership. Bridge ports
 are joined through `dot1dBasePortIfIndex`, then `ifName` or fallback `ifDescr`.
-An unmapped bridge port is preserved as `bridge_port:<number>` and counted.
-When the checklist already read PVID, the crawl reuses its parsed rows rather
-than walking `dot1qPvid` again. Devices returning no rows omit the field.
+An unmapped bridge port is preserved as `bridge_port:<number>` and counted by
+its bridge port number, so an interface named like `bridge_port:7` is not
+counted. When the checklist already read PVID, the crawl reuses its parsed rows
+rather than walking `dot1qPvid` again; it likewise reuses the `ifName` and
+`ifDescr` rows the port reader walked on the same device. Devices returning no rows omit the field.
 Vendor-specific membership tables are an extension point; vendor fallbacks:
 pending A5.
 

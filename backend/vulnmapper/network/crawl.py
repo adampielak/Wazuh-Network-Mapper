@@ -36,7 +36,7 @@ from .parse import (
     collect_ifindex_by_mac,
     collect_ifname_map,
     collect_own_macs,
-    collect_ports,
+    collect_port_tables,
     collect_vlan_membership,
     collect_wifi_clients,
     looks_like_access_point,
@@ -289,12 +289,15 @@ class Crawler:
             # Ethernet sub-interfaces) would misplace them, so it is not read.
             fdb_entries = [] if access_point else await collect_fdb(self._client, ip)
             arp = await collect_arp(self._client, ip)
-            port_status, ports = await collect_ports(self._client, ip)
+            port_status, ports, ifname_rows, ifdescr_rows = await collect_port_tables(
+                self._client, ip)
         except Exception:  # an unsupported MIB must not abort the device
             log.exception("FDB/ARP collection failed for %s", ip)
             fdb_entries, arp, port_status, ports = [], {}, {}, []
+            ifname_rows = ifdescr_rows = None
         try:
-            vlan_membership = await collect_vlan_membership(self._client, ip, pvid_map)
+            vlan_membership = await collect_vlan_membership(
+                self._client, ip, pvid_map, ifname_rows, ifdescr_rows)
         except Exception:
             log.exception("Q-BRIDGE VLAN collection failed for %s", ip)
             vlan_membership = None

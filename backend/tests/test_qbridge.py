@@ -24,6 +24,13 @@ class TestPortList(unittest.TestCase):
         self.assertEqual(parse.decode_portlist("0x80010000"), [1, 16])
         self.assertEqual(parse.decode_portlist(""), [])
 
+    def test_all_printable_octets_arrive_as_text_not_hex(self):
+        # the SNMP layer renders b"@" as "@" and b"AB" as "AB", never as hex
+        self.assertEqual(parse.decode_portlist("@"), [2])
+        self.assertEqual(parse.decode_portlist("U"), [2, 4, 6, 8])
+        self.assertEqual(parse.decode_portlist("AB"), [2, 8, 10, 15])
+        self.assertEqual(parse.decode_portlist(b"\x80\x01"), [1, 16])
+
 
 class TestQBridgeCollection(unittest.TestCase):
     def test_latest_timemark_membership_pvid_and_unmapped_ports(self):
@@ -47,6 +54,25 @@ class TestQBridgeCollection(unittest.TestCase):
         self.assertEqual(membership["pvid"], {"Gi0/1": 10, "bridge_port:9": 20})
         walk = next(c for c in client.calls if c[0] == "walk_columns")
         self.assertNotIn(DOT1Q_PVID, walk[2])
+
+    def test_reuses_port_reader_ifname_rows_without_a_second_walk(self):
+        rows = [r for r in load_rows("qbridge/switch.snmp")
+                if not r[0].startswith(parse.IFNAME_BASE + ".")]
+        ifname_rows = [r for r in load_rows("qbridge/switch.snmp")
+                       if r[0].startswith(parse.IFNAME_BASE + ".")]
+        client = FakeSnmpClient({IP: rows})
+        membership = asyncio.run(parse.collect_vlan_membership(
+            client, IP, ifname_rows=ifname_rows, ifdescr_rows=[]))
+        self.assertEqual(membership["vlans"]["10"], {"tagged": ["Gi0/1"], "untagged": ["Gi0/2"]})
+        self.assertEqual([c for c in client.calls if c[0] == "walk"], [])
+
+    def test_unmapped_count_ignores_interface_names_that_look_like_bridge_ports(self):
+        membership = parse.build_vlan_membership(
+            [(f"{EGRESS}.0.10", "0xc0")], [], [],
+            [(f"{BASEPORT}.1", "1"), (f"{BASEPORT}.2", "2")],
+            ifname_rows=[(f"{parse.IFNAME_BASE}.1", "bridge_port:7"),
+                         (f"{parse.IFNAME_BASE}.2", "Gi0/2")])
+        self.assertEqual(membership["unmapped_bridge_ports"], 0)
 
     def test_no_qbridge_rows_omits_optional_node_field(self):
         client = FakeSnmpClient({IP: [("1.3.6.1.2.1.1.5.0", "synthetic-switch")]})

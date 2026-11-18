@@ -235,6 +235,13 @@ async def collect_ports(client, ip: str) -> tuple[dict, list]:
     """``(port_status, ports)``: the ``collect_port_status`` map and, from the
     same walks plus ifAdminStatus, ifType, ifHighSpeed and ifAlias, the
     per-interface list ``build_ports`` makes. Read-only, best-effort."""
+    status, ports, _, _ = await collect_port_tables(client, ip)
+    return status, ports
+
+
+async def collect_port_tables(client, ip: str) -> tuple[dict, list, list, list]:
+    """``collect_ports`` plus the ifName and ifDescr rows it walked, so later
+    readers on the same device can name ports without walking them again."""
     # the six interface columns in one request sequence, not six walks
     cols = await client.walk_columns(ip, [IFOPERSTATUS_BASE, IFNAME_BASE, IFADMINSTATUS_BASE,
                                           IFTYPE_BASE, IFHIGHSPEED_BASE, IFALIAS_BASE])
@@ -244,12 +251,15 @@ async def collect_ports(client, ip: str) -> tuple[dict, list]:
     ports = build_ports(oper_rows, cols[IFADMINSTATUS_BASE], cols[IFTYPE_BASE],
                         cols[IFHIGHSPEED_BASE], cols[IFALIAS_BASE], ifname_rows, ifdescr_rows)
     _log_fdb.info("%s: port_status has %d port(s)", ip, len(status))
-    return status, ports
+    return status, ports, ifname_rows, ifdescr_rows
 
 
 async def collect_vlan_membership(client, ip: str,
-                                  pvid_map: Optional[dict] = None) -> Optional[dict]:
-    """Read Q-BRIDGE membership, reusing parsed PVID rows when checklist read them.
+                                  pvid_map: Optional[dict] = None,
+                                  ifname_rows: Optional[list] = None,
+                                  ifdescr_rows: Optional[list] = None) -> Optional[dict]:
+    """Read Q-BRIDGE membership, reusing parsed PVID rows when checklist read them
+    and ifName/ifDescr rows when the port reader already walked them.
 
     Vendor-specific membership tables can be added here after research.
     """
@@ -261,8 +271,12 @@ async def collect_vlan_membership(client, ip: str,
     if pvid_map is None:
         bases.append(DOT1Q_PVID)
     columns = await client.walk_columns(ip, bases)
-    ifnames = await client.walk(ip, IFNAME_BASE)
-    ifdescr = await client.walk(ip, IFDESCR_BASE) if not ifnames else []
+    if ifname_rows is None:
+        ifname_rows = await client.walk(ip, IFNAME_BASE)
+        ifdescr_rows = None
+    if ifdescr_rows is None:
+        ifdescr_rows = await client.walk(ip, IFDESCR_BASE) if not ifname_rows else []
+    ifnames, ifdescr = ifname_rows, ifdescr_rows
     return build_vlan_membership(
         columns[DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE],
         columns[DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE],

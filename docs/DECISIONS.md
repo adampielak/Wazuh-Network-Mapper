@@ -35,13 +35,16 @@ in evidence. `weakness_present` separately records whether another emitted
 exposure class exists on that node.
 The registry classifies E6 as both entry and pivot; E14 is an entry class and
 retains `persistence: true`.
+Evidence keys are whitelisted per class, so secret values never enter exposure
+evidence. E1 replaces community values with `community_count` and retains only
+its `found_by` label.
 
 The current graph supports the following classes. Classes marked not observable
 do not emit items until their named source data is added:
 
 | Class | Status | Evidence or exact missing field and supplying phase |
 |---|---|---|
-| E1 | IMPLEMENTED (observed) | `config_findings` evidence for `snmp-default-community` |
+| E1 | IMPLEMENTED (observed) | Whitelisted `snmp-default-community` finding ID, `found_by`, and `community_count`; community values are omitted |
 | E2 | NOT OBSERVABLE | `management_service_reachability_by_zone` and control-plane filter conditions; nmap F3.6 from a lower-trust proxy plus oxidized configuration conditions |
 | E3 | IMPLEMENTED (observed) | `config_findings` evidence for `mgmt-telnet-enabled`, `mgmt-http-enabled`, or `snmp-no-auth` |
 | E4 | NOT OBSERVABLE | tcp/4786 listener or `no vstack` configuration condition; nmap F3.6 or oxidized configuration conditions |

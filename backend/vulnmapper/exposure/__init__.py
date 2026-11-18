@@ -244,6 +244,42 @@ def _validate_graph(graph) -> None:
             raise ValueError(f"graph nodes[{index}].node_id is required")
         if not node.get("kind"):
             raise ValueError(f"graph nodes[{index}].kind is required")
+        address = node.get("ip")
+        if address not in (None, ""):
+            try:
+                ipaddress.ip_address(address)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"graph node {node['node_id']} has an invalid ip address") from exc
+        findings = node.get("config_findings")
+        if findings is not None and not isinstance(findings, list):
+            raise ValueError(f"graph node {node['node_id']} config_findings must be a JSON array")
+        for finding_index, finding in enumerate(findings or []):
+            label = f"graph node {node['node_id']} config_findings[{finding_index}]"
+            if not isinstance(finding, dict):
+                raise ValueError(f"{label} must be a JSON object")
+            if not finding.get("id"):
+                raise ValueError(f"{label}.id is required")
+            evidence = finding.get("evidence")
+            if evidence is not None and not isinstance(evidence, dict):
+                raise ValueError(f"{label}.evidence must be a JSON object")
+            if finding["id"] == "spare-ports-in-used-vlan":
+                if not isinstance(evidence, dict):
+                    raise ValueError(f"{label}.evidence is required for spare-port findings")
+                ports = evidence.get("ports")
+                if not isinstance(ports, list):
+                    raise ValueError(f"{label}.evidence.ports must be a JSON array")
+                for port_index, port in enumerate(ports):
+                    port_label = f"{label}.evidence.ports[{port_index}]"
+                    if not isinstance(port, dict):
+                        raise ValueError(f"{port_label} must be a JSON object")
+                    if "port" not in port or "vlan" not in port:
+                        raise ValueError(f"{port_label} must contain port and vlan")
+    edges = graph.get("edges")
+    if not isinstance(edges, list):
+        raise ValueError("graph edges must be a JSON array")
+    for index, edge in enumerate(edges):
+        if not isinstance(edge, dict):
+            raise ValueError(f"graph edges[{index}] must be a JSON object")
 
 
 def compute_exposure(graph: dict, zones, kev=None) -> dict:
@@ -313,14 +349,23 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
             for port in (finding.get("evidence") or {}).get("ports") or []:
                 name = port.get("port")
                 evidence_key = port_key(name or "")
-                matching = next((entry for entry in node.get("ports") or []
-                                 if evidence_key in {port_key(entry.get("name", "")),
-                                                     port_key(entry.get("alias", ""))}), None)
+                port_entries = node.get("ports") or []
+                matching = next((entry for entry in port_entries
+                                 if port_key(entry.get("name", "")) == evidence_key), None)
+                if matching is None:
+                    matching = next((entry for entry in port_entries
+                                     if entry.get("alias")
+                                     and port_key(entry["alias"]) == evidence_key), None)
                 if not name or port.get("admin") != "up" or not matching \
                         or matching.get("admin") != "up" or matching.get("oper") != "down" \
                         or matching.get("state") == "link_lost":
                     continue
-                port_names = {matching.get("name"), matching.get("alias")} - {None, ""}
+                port_names = {matching.get("name")} - {None, ""}
+                alias = matching.get("alias")
+                other_name_keys = {port_key(entry.get("name", "")) for entry in port_entries
+                                   if entry is not matching}
+                if alias and port_key(alias) not in other_name_keys:
+                    port_names.add(alias)
                 neighbor, endpoint_link = _port_has_graph_link(graph, node_id, port_names)
                 if neighbor or endpoint_link:
                     continue

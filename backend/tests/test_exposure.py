@@ -193,6 +193,30 @@ class TestExposure(unittest.TestCase):
         result = compute_exposure(graph([node]), {})
         self.assertFalse(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
 
+    def test_e10_prefers_port_name_when_another_port_uses_it_as_alias(self):
+        node = device("device:synthetic-switch", ports=[
+            {"name": "Gi1/0/7", "alias": "Gi1/0/8", "admin": "up", "oper": "down"},
+            {"name": "Gi1/0/8", "alias": "", "admin": "up", "oper": "up"},
+        ], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "Gi1/0/8", "vlan": 10, "admin": "up"}],
+            },
+        }])
+        result = compute_exposure(graph([node]), {})
+        self.assertFalse(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
+    def test_e10_alias_cannot_hide_another_ports_exposure(self):
+        node = device("device:synthetic-switch", ports=[
+            {"name": "Gi1/0/7", "alias": "Gi1/0/8", "admin": "up", "oper": "down"},
+            {"name": "Gi1/0/8", "alias": "", "admin": "up", "oper": "up"},
+        ], neighbor_ports=["Gi1/0/8"], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "Gi1/0/7", "vlan": 10, "admin": "up"}],
+            },
+        }])
+        result = compute_exposure(graph([node]), {})
+        self.assertTrue(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
     def test_e10_distinguishes_dot_subinterface_from_slash_port(self):
         node = device("device:synthetic-router", "router", {"Gi0/0.100": "up"}, ports=[
             {"name": "Gi0/0.100", "admin": "up", "oper": "down"},
@@ -289,6 +313,35 @@ class TestExposure(unittest.TestCase):
                 json.dump({"prefixes": {"not-a-prefix": "user"}}, handle)
             with self.assertRaisesRegex(ValueError, "zones prefixes entry"):
                 compute_exposure(graph([]), path)
+
+    def test_malformed_edges_and_config_findings_raise_labeled_value_errors(self):
+        valid_node = device("device:synthetic-validation")
+        for edges, message in (([None], r"edges\[0\]"), ({"edge": {}}, "graph edges")):
+            with self.subTest(edges=edges):
+                with self.assertRaisesRegex(ValueError, message):
+                    compute_exposure({"nodes": [valid_node], "edges": edges}, {})
+        cases = [
+            ("x", r"device:synthetic-validation config_findings must be"),
+            (["x"], r"device:synthetic-validation config_findings\[0\] must be"),
+            ([{"id": "spare-ports-in-used-vlan", "evidence": {"ports": "x"}}],
+             r"config_findings\[0\]\.evidence\.ports must be"),
+            ([{"id": "spare-ports-in-used-vlan", "evidence": {"ports": [None]}}],
+             r"config_findings\[0\]\.evidence\.ports\[0\] must be"),
+            ([{"id": "spare-ports-in-used-vlan", "evidence": {"ports": [{"vlan": 10}]}}],
+             r"config_findings\[0\]\.evidence\.ports\[0\] must contain port and vlan"),
+            ([{"id": "spare-ports-in-used-vlan", "evidence": {"ports": [{"port": "Gi1/0/7"}]}}],
+             r"config_findings\[0\]\.evidence\.ports\[0\] must contain port and vlan"),
+        ]
+        for findings, message in cases:
+            with self.subTest(findings=findings):
+                node = {**valid_node, "config_findings": findings}
+                with self.assertRaisesRegex(ValueError, message):
+                    compute_exposure(graph([node]), {})
+
+    def test_invalid_node_ip_is_rejected_with_node_id(self):
+        node = device("device:synthetic-invalid-ip", ip="not-an-ip")
+        with self.assertRaisesRegex(ValueError, "device:synthetic-invalid-ip.*invalid ip"):
+            compute_exposure(graph([node]), {"prefixes": {"192.0.2.0/24": "user"}})
 
     def test_ipv4_and_ipv6_prefix_presence_can_form_e12_pairs(self):
         graph_v4 = routed_graph()

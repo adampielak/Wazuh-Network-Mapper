@@ -10,15 +10,20 @@ reports it. The finding keeps its result and includes `admin` on each listed
 port. This follows [RFC 2863, The Interfaces Group MIB](https://www.rfc-editor.org/rfc/rfc2863).
 
 VLAN membership is keyed by `(site, L2 component, VID)` when a site is present,
-and `(L2 component, VID)` otherwise. The component is built from graph edges
-between nodes, without traversing router or L3-switch boundaries. A router's
-VLAN keys use the component of each adjacent non-router neighbour where that
-VID is observed; a VID not observed on any neighbour side is not inferred.
-When no neighbour side can be identified, its own component is used. This follows the VLAN
-bridging scope represented by [RFC 4363, Q-BRIDGE-MIB](https://www.rfc-editor.org/rfc/rfc4363)
-and [IEEE 802.1Q, Bridges and Bridged Networks](https://standards.ieee.org/ieee/802.1q/10323/).
-Existing output `vlans` remains a list of integer VIDs; `vlan_keys` also exposes
-the scoped identity.
+and `(L2 component, VID)` otherwise. Only role `router` cuts graph components;
+an `l3-switch` remains in its bridged component, consistent with
+[IEEE 802.1Q, Bridges and Bridged Networks](https://standards.ieee.org/ieee/802.1q/10323/).
+This VLAN context is represented by [RFC 4363, Q-BRIDGE-MIB](https://www.rfc-editor.org/rfc/rfc4363).
+
+A router's VLAN key uses the neighbor's component and site. A sub-interface VID
+is assigned to that side as observed only when its base interface matches the
+router-side port on an LLDP or endpoint edge. For an SVI-style interface or an
+edge without a router-side port, a VID observed in the neighbor component is
+assigned as inferred. Inferred sides are labelled on transit steps and counted
+in metadata. A side with a known sub-interface port that does not match the
+edge is excluded. When no neighbor side is available, the router's own site
+and component are used. Existing output `vlans` remains a list of integer VIDs;
+`vlan_keys` also exposes the scoped identity.
 
 An explicitly classified CVE row may set `requires_peer` to a protocol such as
 `bgp`. The CVE lookup/catalogue can supply this field; the attack-path engine

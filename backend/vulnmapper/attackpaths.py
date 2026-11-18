@@ -11,6 +11,7 @@ import json
 import logging
 import math
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
@@ -20,7 +21,7 @@ import networkx as nx
 from . import vulnfile
 from .checklist import catalogue
 from .checklist import tables as t
-from .checklist.evaluate import l3_vlans
+from .checklist.evaluate import l3_vlans, _is_non_vlan_type
 from .common import StageResult, plural, setup_logging, write_json_atomic
 from .schema import EDGE_ENDPOINT_LINK, EDGE_LLDP
 
@@ -34,6 +35,7 @@ TARGETS_FILENAME = "targets.json"
 KEEP_PER_TARGET = 10
 IMPORTANCE = ("high", "moderate", "low")       # FIPS 199 impact levels, no other scale
 ROUTER_ROLES = ("router", "l3-switch")
+L2_BOUNDARY_ROLES = ("router",)
 # Wazuh agent states that mean the host is not there: never a starting point
 # (the plugin's offline rule, topology/inactive.ts, uses the same two).
 AGENT_OFFLINE = ("disconnected", "never_connected")
@@ -44,6 +46,7 @@ FOUR = ("attack_vector", "attack_complexity", "privileges_required", "user_inter
 STEP_BY_COMPLEXITY = {"LOW": 0.9, "MEDIUM": 0.6, "HIGH": 0.2}
 MISCONFIG_CHECKS = ("snmp-default-community", "mgmt-telnet-enabled",
                     "mgmt-http-enabled", "snmp-no-auth")
+_SUBINTERFACE = re.compile(r"^(.+\d[\d/]*)\.(\d+)$")
 
 _IR7788 = {"title": "NIST IR 7788, Security Risk Analysis of Enterprise Networks "
                     "Using Probabilistic Attack Graphs",
@@ -80,6 +83,7 @@ LIMITS = [
     "Assets with no known VLAN are left out of reachability.",
     "A CVE with requires_peer is usable only from a node listed in the target's matching protocol peer field.",
     "Spare-port entries with unknown administrative state are excluded from starts; the checklist reports their count.",
+    "Inferred router sides are labelled on transit steps; metadata counts routers with inferred sides.",
     "An unverified asset is shown as unverified, not as safe.",
 ]
 
@@ -103,7 +107,7 @@ def _best_weakness(candidates: list, cross_router: bool,
     for r in candidates:
         protocol = r.get("requires_peer")
         if protocol and (source_id is None or
-                         source_id not in (target or {}).get(f"{protocol}_peers", [])):
+                         source_id not in ((target or {}).get(f"{protocol}_peers") or [])):
             continue
         if not _qualifies(r, cross_router):
             continue
@@ -157,6 +161,13 @@ def _takeover(node: dict, candidates: list, cross_router: bool,
     return max(options, key=lambda o: (o["value"], o["kind"] == "weakness"))
 
 
+def _step_order_key(step: dict, candidates: list) -> tuple:
+    """Match takeover ranking, including CVSS when generic and peer steps tie."""
+    score = next((row.get("cvss") or 0.0 for row in candidates
+                  if row.get("cve") == step.get("cve")), 0.0)
+    return step["value"], step["kind"] == "weakness", score
+
+
 def _order_key(route: dict) -> tuple:
     """Within a target, never a blended score: likelihood, then the highest node
     OVSS along the route, then fewer steps, then start id, then the ids along it."""
@@ -207,8 +218,16 @@ class AttackPathEngine:
                                    for nid, rows in self.candidates.items()}
         self.routers = {nid: self._routes(n) for nid, n in self.by_id.items()
                         if n.get("role") in ROUTER_ROLES and self._routes(n)}
-        self.router_vlan_keys = {nid: self._router_vlan_keys(nid, vlans)
-                                 for nid, vlans in self.routers.items()}
+        self.router_vlan_sides = {nid: self._router_vlan_sides(nid, vlans)
+                                  for nid, vlans in self.routers.items()}
+        self.router_vlan_sides = {
+            nid: (sides if self.by_id[nid].get("role") == "router" else
+                  {key: "observed" for key in self.vlan_keys[nid]})
+            for nid, sides in self.router_vlan_sides.items()}
+        self.router_vlan_keys = {nid: set(sides) for nid, sides in self.router_vlan_sides.items()}
+        for nid, sides in self.router_vlan_sides.items():
+            if self.by_id[nid].get("role") == "router":
+                self.vlan_keys[nid] = set(sides)
         self.takeover = {nid: {cross: _takeover(self.by_id[nid], self.generic_candidates[nid], cross)
                                for cross in (False, True)} for nid in self.placed}
         self.starts, self.offline_starts = self.find_starts()
@@ -236,8 +255,8 @@ class AttackPathEngine:
             source, target = edge.get("source"), edge.get("target")
             if source not in self.by_id or target not in self.by_id:
                 continue
-            if (self.by_id[source].get("role") in ROUTER_ROLES or
-                    self.by_id[target].get("role") in ROUTER_ROLES):
+            if (self.by_id[source].get("role") in L2_BOUNDARY_ROLES or
+                    self.by_id[target].get("role") in L2_BOUNDARY_ROLES):
                 continue
             l2.add_edge(source, target)
         components = {}
@@ -250,41 +269,93 @@ class AttackPathEngine:
         component = component or self.l2_component.get(node["node_id"], node["node_id"])
         return node.get("site"), component, int(vlan)
 
+    @staticmethod
+    def _vlan_key_sort(key: tuple) -> tuple:
+        site, component, vid = key
+        return site is not None, site or "", component, vid
+
     def _component_vlan_ids(self) -> dict:
-        vlans_by_component: dict[str, set] = {}
+        vlans_by_component: dict[tuple, set] = {}
         for nid, vlans in self.placed.items():
-            if self.by_id[nid].get("role") in ROUTER_ROLES:
+            if self.by_id[nid].get("role") in L2_BOUNDARY_ROLES:
                 continue
-            component = self.l2_component[nid]
-            vlans_by_component.setdefault(component, set()).update(vlans)
+            node = self.by_id[nid]
+            domain = (node.get("site"), self.l2_component[nid])
+            vlans_by_component.setdefault(domain, set()).update(vlans)
         return vlans_by_component
 
     def _node_vlan_keys(self, nid: str, vlans: set) -> set:
         node = self.by_id[nid]
-        if node.get("role") not in ROUTER_ROLES:
-            return {self._vlan_key(node, vlan) for vlan in vlans}
-        neighbours = set()
+        return {self._vlan_key(node, vlan) for vlan in vlans}
+
+    @staticmethod
+    def _normalise_port(name: Optional[str]) -> Optional[str]:
+        return re.sub(r"\s+", "", str(name)).lower() if name else None
+
+    @staticmethod
+    def _router_side_port(edge: dict, router_id: str) -> Optional[str]:
+        if edge.get("type") == EDGE_LLDP:
+            if edge.get("source") == router_id:
+                return edge.get("local_port")
+            if edge.get("target") == router_id:
+                return edge.get("remote_port")
+        elif edge.get("type") == EDGE_ENDPOINT_LINK and edge.get("target") == router_id:
+            return edge.get("local_port")
+        return None
+
+    def _subinterface_ports(self, node: dict, vlans: set) -> dict:
+        ports: dict[int, set[str]] = {}
+        for name, state in (node.get("port_status") or {}).items():
+            if state != "up" or _is_non_vlan_type(str(name)):
+                continue
+            match = _SUBINTERFACE.fullmatch(str(name).strip())
+            if not match:
+                continue
+            base, unit = match.groups()
+            vid = int(unit)
+            if vid in vlans:
+                ports.setdefault(vid, set()).add(self._normalise_port(base))
+        return ports
+
+    def _router_vlan_sides(self, nid: str, vlans: set) -> dict:
+        node = self.by_id[nid]
+        if node.get("role") != "router":
+            return {self._vlan_key(node, vid): "observed" for vid in vlans}
+        neighbours = []
         for edge in self.graph.get("edges") or []:
+            if edge.get("type") not in (EDGE_LLDP, EDGE_ENDPOINT_LINK):
+                continue
             if edge.get("source") == nid:
                 other = edge.get("target")
             elif edge.get("target") == nid:
                 other = edge.get("source")
             else:
                 continue
-            if (other in self.by_id and
-                    self.by_id[other].get("role") not in ROUTER_ROLES):
-                neighbours.add(self.l2_component[other])
-        if not neighbours:
-            neighbours = {self.l2_component.get(nid, nid)}
-            side_vlans = {self.l2_component.get(nid, nid): vlans}
-        else:
-            side_vlans = {component: vlans & self.component_vlans.get(component, set())
-                          for component in neighbours}
-        return {self._vlan_key(node, vlan, component)
-                for component, side in side_vlans.items() for vlan in side}
+            if other in self.by_id and self.by_id[other].get("role") not in L2_BOUNDARY_ROLES:
+                neighbours.append((edge, other, self.l2_component[other]))
 
-    def _router_vlan_keys(self, nid: str, vlans: set) -> set:
-        return self._node_vlan_keys(nid, vlans)
+        sides = {}
+        if not neighbours:
+            component = self.l2_component.get(nid, nid)
+            return {self._vlan_key(node, vid, component): "inferred" for vid in vlans}
+
+        port_interfaces = self._subinterface_ports(node, vlans)
+        for edge, other, component in neighbours:
+            neighbor = self.by_id[other]
+            side_vids = self.component_vlans.get((neighbor.get("site"), component), set())
+            edge_port = self._normalise_port(self._router_side_port(edge, nid))
+            for vid in vlans & side_vids:
+                interfaces = port_interfaces.get(vid, set())
+                if edge_port and interfaces:
+                    if edge_port not in interfaces:
+                        continue
+                    confidence = "observed"
+                else:
+                    confidence = "inferred"
+                key = (neighbor.get("site"), component, vid)
+                if key not in sides or confidence == "observed":
+                    sides[key] = confidence
+        return sides
 
     @staticmethod
     def _vlan_key_doc(key: tuple) -> dict:
@@ -353,11 +424,15 @@ class AttackPathEngine:
 
     # ---- the reachability graph -------------------------------------------------
 
-    def _router_between(self, a_vlans: set, b_vlans: set, exclude: set) -> Optional[str]:
+    def _router_between(self, a_vlans: set, b_vlans: set,
+                        exclude: set) -> Optional[tuple[str, str]]:
         for rid in sorted(self.routers):             # lowest node id among qualifiers
-            routed = self.router_vlan_keys[rid]
-            if rid not in exclude and routed & a_vlans and routed & b_vlans:
-                return rid
+            sides = self.router_vlan_sides[rid]
+            left = a_vlans & sides.keys()
+            right = b_vlans & sides.keys()
+            if rid not in exclude and left and right:
+                side = "inferred" if any(sides[key] == "inferred" for key in left | right) else "observed"
+                return rid, side
         return None
 
     def reachability_graph(self) -> nx.DiGraph:
@@ -378,20 +453,23 @@ class AttackPathEngine:
                 if mu & mv:
                     cross, router = False, None
                 else:
-                    router = self._router_between(mu, mv, {u, v})
-                    if router is None:
+                    transit = self._router_between(mu, mv, {u, v})
+                    if transit is None:
                         continue
+                    router, router_side = transit
                     cross = True
+                if not cross:
+                    router_side = None
                 step = self.takeover[v][cross]
                 peer_step = _best_weakness(self.peer_candidates[v], cross, u, self.by_id[v])
                 if peer_step is not None:
                     step = max((candidate for candidate in (step, peer_step) if candidate),
-                               key=lambda candidate: (candidate["value"],
-                                                      candidate["kind"] == "weakness"))
+                               key=lambda candidate: _step_order_key(candidate,
+                                                                     self.candidates[v]))
                 if step is None:
                     continue
                 g.add_edge(u, v, weight=-math.log(step["value"]), step=step,
-                           cross=cross, router=router)
+                           cross=cross, router=router, router_side=router_side)
         return g
 
     # ---- starting points --------------------------------------------------------
@@ -424,7 +502,8 @@ class AttackPathEngine:
             starts.append({"id": nid, "kind": kind,
                            "vlans": sorted(self.placed[nid]),
                            "vlan_keys": [self._vlan_key_doc(k)
-                                         for k in sorted(self.vlan_keys[nid])]})
+                                         for k in sorted(self.vlan_keys[nid],
+                                                         key=self._vlan_key_sort)]})
         return starts + self._spare_starts(), offline
 
     def _spare_starts(self) -> list:
@@ -450,7 +529,8 @@ class AttackPathEngine:
                 starts.append({"id": f"start:spare-ports:{nid}:{vlan}", "kind": "spare_ports",
                                "switch": nid, "switch_label": self._label(nid),
                                "vlans": [vlan], "vlan_keys": [self._vlan_key_doc(k)
-                                                                  for k in sorted(membership)],
+                                                                  for k in sorted(membership,
+                                                                                  key=self._vlan_key_sort)],
                                "admin_unknown_ports_on_switch": unknown_admin,
                                "ports": ports,
                                "listed_ports": len(ports), "spare_ports_on_switch": ev.get("total"),
@@ -477,6 +557,7 @@ class AttackPathEngine:
             if edge["cross"]:
                 steps.append({"kind": "transit", "from": a, "through": edge["router"], "to": b,
                               "value": 1.0, "source": _IR7788,
+                              "router_side": edge["router_side"],
                               "note": "firewall and access rules are not read"})
             step = dict(edge["step"])
             likelihood *= step["value"]
@@ -599,6 +680,9 @@ class AttackPathEngine:
                           default=None)
         most_shared = most_shared["id"] if most_shared and most_shared["routes_through"] else None
         verified = sum(1 for a in per_asset if a["verified"])
+        routers_with_inferred_sides = sum(
+            1 for nid, sides in self.router_vlan_sides.items()
+            if self.by_id[nid].get("role") == "router" and "inferred" in sides.values())
         return {
             "metadata": {
                 "computed_at": datetime.now(timezone.utc).isoformat(),
@@ -615,6 +699,7 @@ class AttackPathEngine:
                     "not_placed": len(self.not_placed), "assets_verified": verified,
                     "assets_unverified": len(per_asset) - verified,
                     "cves_v4_unread": self._cves_v4(),
+                    "routers_with_inferred_sides": routers_with_inferred_sides,
                 },
                 "sources": SOURCES,
                 "reachability": REACHABILITY,

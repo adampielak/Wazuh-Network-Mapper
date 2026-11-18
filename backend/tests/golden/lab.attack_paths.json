@@ -17,7 +17,8 @@
       "not_placed": 7,
       "assets_verified": 12,
       "assets_unverified": 0,
-      "cves_v4_unread": 0
+      "cves_v4_unread": 0,
+      "routers_with_inferred_sides": 0
     },
     "sources": [
       {
@@ -54,6 +55,7 @@
       "Assets with no known VLAN are left out of reachability.",
       "A CVE with requires_peer is usable only from a node listed in the target's matching protocol peer field.",
       "Spare-port entries with unknown administrative state are excluded from starts; the checklist reports their count.",
+      "Inferred router sides are labelled on transit steps; metadata counts routers with inferred sides.",
       "An unverified asset is shown as unverified, not as safe."
     ],
     "most_shared_asset": "device:00:23:ac:e5:74:00"
@@ -143,7 +145,7 @@
       "vlan_keys": [
         {
           "site": null,
-          "component": "device:54:75:d0:ab:bd:1a",
+          "component": "device:00:17:95:be:b2:00",
           "vid": 80
         }
       ]
@@ -157,7 +159,7 @@
       "vlan_keys": [
         {
           "site": null,
-          "component": "device:54:75:d0:ab:bd:1a",
+          "component": "device:00:17:95:be:b2:00",
           "vid": 80
         }
       ]

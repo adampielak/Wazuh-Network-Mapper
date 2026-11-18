@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
-from . import attackpaths, hosts, vulnfile
+from . import attackpaths, exposure, hosts, vulnfile
 from .assemble import assemble
 from .checklist.stage import run_checklist
 from .common import StageResult, plural, setup_logging, write_json_atomic
@@ -90,6 +90,9 @@ class ScanContext:
                                              if beside_graph else None)
         self.paths_out = args.paths_out or (attackpaths.default_path(beside_graph)
                                             if beside_graph else None)
+        self.exposure_out = args.exposure_out or (
+            os.path.join(os.path.dirname(os.path.abspath(beside_graph)), "exposure.json")
+            if beside_graph else None)
         self.targets_path = args.targets or (attackpaths.targets_path(beside_graph)
                                              if beside_graph else None)
 
@@ -290,6 +293,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--paths-out", metavar="PATH",
                         help="write the exposure paths to PATH (default: attack_paths.json "
                              "beside -o; skipped when the graph goes to stdout).")
+    parser.add_argument("--zones", metavar="PATH",
+                        help="explicit zone mapping JSON for the opt-in exposure stage.")
+    parser.add_argument("--kev", metavar="PATH",
+                        help="CISA KEV JSON for the exposure stage (requires --zones).")
+    parser.add_argument("--exposure-out", metavar="PATH",
+                        help="write exposure.json to PATH (default: beside -o; skipped when "
+                             "the graph goes to stdout).")
     parser.add_argument("--records-in-background", action="store_true",
                         help="score with the CVE records fetched within 5 s of the OVSS stage, "
                              "write the outputs (closing stdout), then let the rest of the "
@@ -507,7 +517,10 @@ class Pipeline:
 
     def run(self, argv: Optional[list[str]] = None) -> int:
         setup_logging()
-        args = build_parser().parse_args(argv)
+        parser = build_parser()
+        args = parser.parse_args(argv)
+        if args.kev and not args.zones:
+            parser.error("--kev requires --zones")
         scan = ScanContext(args, **self._services)
         started = time.monotonic()
         scan.timing["started_at"] = datetime.now(timezone.utc).isoformat()
@@ -598,6 +611,9 @@ class Pipeline:
         _run_stage(scan, "Attack paths", attackpaths.run_attack_paths,
                    skip=self._attack_paths_skip(scan), label="Computing attack paths",
                    timing="attack_paths_s")
+        _run_stage(scan, "Exposure", self._run_exposure,
+                   skip=self._exposure_skip(scan), label="Computing exposure",
+                   timing="exposure_s")
         metadata["stages"] = scan.stages
 
         self._log_summary(scan.document)
@@ -625,6 +641,42 @@ class Pipeline:
         if scan.engine is None:         # built by the OVSS stage
             return "OVSS failed"
         return None
+
+    @staticmethod
+    def _exposure_skip(scan: ScanContext) -> Optional[str]:
+        if not scan.args.zones:
+            return "no zone mapping given"
+        if scan.exposure_out is None:
+            return "no output file given"
+        return None
+
+    @staticmethod
+    def _run_exposure(scan: ScanContext) -> StageResult:
+        with open(scan.args.zones, encoding="utf-8") as f:
+            zones = json.load(f)
+        kev = None
+        if scan.args.kev:
+            with open(scan.args.kev, encoding="utf-8") as f:
+                kev = json.load(f)
+        result = exposure.compute_exposure(scan.document, zones, kev)
+        counts = {
+            "nodes_with_items": sum(bool(items) for items in result["nodes"].values()),
+            "items": sum(len(items) for items in result["nodes"].values()),
+            "zone_gaps": len(result["zone_gaps"]),
+        }
+        document = {
+            "source_scan": scan.document["metadata"]["scan_time"],
+            "nodes": result["nodes"],
+            "zone_gaps": result["zone_gaps"],
+            "classes": result["classes"],
+            "limits": result["limits"],
+            "counts": counts,
+        }
+        write_json_atomic(scan.exposure_out, document)
+        log.info("wrote exposure to %s", scan.exposure_out)
+        note = f"{plural(counts['items'], 'item')} on {plural(counts['nodes_with_items'], 'node')}, " \
+               f"{plural(counts['zone_gaps'], 'zone gap')}"
+        return StageResult(note=note)
 
     @staticmethod
     def _log_summary(document: dict) -> None:

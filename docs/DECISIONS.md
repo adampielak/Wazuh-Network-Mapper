@@ -2,6 +2,14 @@
 
 Decisions on review items, agreed with the team before they were changed.
 
+## B7. Exposure is an opt-in pipeline stage
+
+The scan runs exposure evaluation only when given an explicit `--zones` mapping.
+It writes a separate `exposure.json`; findings are not embedded in graph nodes,
+and the plugin is not wired to this output yet. `source_scan` links the exposure
+document to the graph's finalized `metadata.scan_time`. Invalid exposure input
+fails only this stage and leaves the scan graph available.
+
 ## B6. Exposure evaluation uses explicit zone mappings
 
 Exposure evaluation consumes graph data and caller-supplied JSON only. VLAN zones

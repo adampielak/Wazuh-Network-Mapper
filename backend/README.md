@@ -44,6 +44,9 @@ Useful options:
 - `--no-device-cves`, `--nvd-cache PATH`, `--nvd-budget SECONDS`: the device
   CVE stage (see "Device CVEs").
 - `--no-cve-vectors`: skip the CVE vector stage (see "How a CVE is reached").
+- `--zones PATH`, `--kev PATH`, `--exposure-out PATH`: opt in to a separate
+  exposure report using an explicit zone mapping and optional CISA KEV JSON;
+  the output defaults to `exposure.json` beside `-o`.
 - `--no-checklist`, `--check-default-communities`, `--check-management-ports`:
   the configuration checks (see "Configuration checks").
 - `--no-name-lookup`, `--probe-unmanaged-snmp`: hosts without an agent (see
@@ -51,6 +54,10 @@ Useful options:
 - `--nmap-unmanaged`, `--nmap-hosts-cap N`, `--nmap-budget SECONDS`: the
   optional, active service scan of unmanaged hosts (see "Service scan").
 - `--help`: list every option.
+
+Run the standalone, files-only exposure evaluator from `backend/` with
+`python -m vulnmapper.exposure --graph PATH --zones PATH [--kev PATH] [--out PATH]`.
+Without `--out`, it writes `exposure.json` beside the graph.
 
 ## Output
 

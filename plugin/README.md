@@ -220,6 +220,12 @@ The **Vulnerability report** page turns the three files a scan produces
 on screen and as an A4 PDF. It only displays data the scan produced; it changes
 no scanner or engine.
 
+The dashboard above the report summarizes filtered findings by severity,
+CVSS, EPSS, publication year, platform, asset, package and CVE. It uses the
+same applied severity, confidence and on-path filters as the report. Selecting
+a severity tile applies that severity filter. Missing publication dates are
+counted separately, and platforms use the graph vendor field.
+
 Two modes, chosen by a switch at the top:
 
 - **Most vulnerable assets**: assets ranked worst-first (by node OVSS, then
@@ -244,13 +250,14 @@ asset's CVE table at a configurable number (default 200) with a "showing the
 200 worst of N" line.
 
 **Export PDF** calls the browser's print; its "Save as PDF" writes a multi-page
-A4 file with a cover, executive summary (with findings per tier, and a "Most
-CVEs" chart by CVE count), methodology and sources (including how OVSS is
+A4 file with the dashboard first, then a cover, executive summary (with findings
+per tier and a "Most CVEs" chart by CVE count), methodology and sources
+(including how OVSS is
 computed and its sources: CISA KEV, FIRST EPSS and CVE records), findings and
-remediation. A print stylesheet hides the dashboard and plugin chrome, forces a
-light document, and starts each section on its own page. Keep the print
-dialog's "Headers and footers" on for page numbers. The organisation name on
-the cover comes from `vulnmapper.reportOrg`.
+remediation. A print stylesheet hides plugin chrome, forces a light document
+and keeps dashboard panels and report sections together where the page allows.
+Keep the print dialog's "Headers and footers" on for page numbers. The
+organisation name on the cover comes from `vulnmapper.reportOrg`.
 
 ## Recommendations
 

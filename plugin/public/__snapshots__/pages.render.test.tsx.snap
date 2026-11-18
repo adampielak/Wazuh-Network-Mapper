@@ -2954,8 +2954,8 @@ exports[`page rendering on the golden lab outputs device detail: lab device:00:2
 <div class=\\"euiAccordion__triggerWrapper\\">
 <button id=\\"X\\" aria-controls=\\"X\\" aria-expanded=\\"false\\" class=\\"euiAccordion__button\\" type=\\"button\\">
 <span class=\\"euiAccordion__iconWrapper\\">
-<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiIcon-isLoading euiAccordion__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
-<path d=\\"M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiAccordion__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path fill-rule=\\"nonzero\\" d=\\"m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z\\">
 </path>
 </svg>
 </span>
@@ -14095,6 +14095,1222 @@ exports[`page rendering on the golden lab outputs vulnerability report 1`] = `
 <div class=\\"euiSpacer euiSpacer--m\\">
 </div>
 <div class=\\"vmReport\\" data-test-subj=\\"vmReport\\">
+<section class=\\"vmDashboard\\" data-test-subj=\\"vmVulnDashboard\\" aria-label=\\"Vulnerability dashboard\\">
+<div class=\\"vmDashboardTiles vmDashboardTiles--severity\\">
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--critical\\" aria-label=\\"Filter by Critical\\" data-test-subj=\\"vmDashboardSeverity-critical\\">
+<strong>7</strong>
+<span>Critical</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--high\\" aria-label=\\"Filter by High\\" data-test-subj=\\"vmDashboardSeverity-high\\">
+<strong>4</strong>
+<span>High</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--medium\\" aria-label=\\"Filter by Medium\\" data-test-subj=\\"vmDashboardSeverity-medium\\">
+<strong>11</strong>
+<span>Medium</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--low\\" aria-label=\\"Filter by Low\\" data-test-subj=\\"vmDashboardSeverity-low\\">
+<strong>3</strong>
+<span>Low</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--unknown\\" aria-label=\\"Filter by No CVSS score\\" data-test-subj=\\"vmDashboardSeverity-unknown\\">
+<strong>1</strong>
+<span>No CVSS score</span>
+</button>
+</div>
+<div class=\\"vmDashboardTiles vmDashboardTiles--summary\\">
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>26</strong>
+<span>Findings</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>24</strong>
+<span>Unique CVEs</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>4</strong>
+<span>Affected assets</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>3</strong>
+<span>CISA KEV findings</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>0</strong>
+<span>EPSS ≥ 0.5 findings</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>0.0500</strong>
+<span>Max EPSS</span>
+</div>
+</div>
+<div class=\\"vmDashboardTopGrid\\">
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 CVEs</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"CVE-2026-90000\\">CVE-2026-90000</td>
+<td>2</td>
+</tr>
+<tr>
+<td title=\\"CVE-2026-90002\\">CVE-2026-90002</td>
+<td>2</td>
+</tr>
+<tr>
+<td title=\\"CVE-2000-0486\\">CVE-2000-0486</td>
+<td>1</td>
+</tr>
+<tr>
+<td title=\\"CVE-2005-3921\\">CVE-2005-3921</td>
+<td>1</td>
+</tr>
+<tr>
+<td title=\\"CVE-2006-3906\\">CVE-2006-3906</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 platforms</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"ubuntu\\">ubuntu</td>
+<td>16</td>
+</tr>
+<tr>
+<td title=\\"Cisco\\">Cisco</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 assets</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"web-01\\">web-01</td>
+<td>14</td>
+</tr>
+<tr>
+<td title=\\"L3-Switch\\">L3-Switch</td>
+<td>8</td>
+</tr>
+<tr>
+<td title=\\"L2-Switch\\">L2-Switch</td>
+<td>2</td>
+</tr>
+<tr>
+<td title=\\"wazuh-server\\">wazuh-server</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 packages</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"Cisco IOS 12.2(55)SE12\\">Cisco IOS 12.2(55)SE12</td>
+<td>8</td>
+</tr>
+<tr>
+<td title=\\"lib0\\">lib0</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"lib1\\">lib1</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"lib2\\">lib2</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"lib3\\">lib3</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class=\\"vmDashboardChartGrid\\">
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Findings by severity</h3>
+<div class=\\"vmDashboardDonut\\">
+<svg viewBox=\\"0 0 100 100\\" role=\\"img\\" aria-label=\\"Findings by severity\\">
+<circle class=\\"vmDashboardDonut__track\\" cx=\\"50\\" cy=\\"50\\" r=\\"36\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#dc2626\\" stroke-width=\\"16\\" stroke-dasharray=\\"60.89856528497137 165.29610577349374\\" stroke-dashoffset=\\"0\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#f97316\\" stroke-width=\\"16\\" stroke-dasharray=\\"34.799180162840784 191.39549089562433\\" stroke-dashoffset=\\"-60.89856528497137\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#eab308\\" stroke-width=\\"16\\" stroke-dasharray=\\"95.69774544781215 130.49692561065297\\" stroke-dashoffset=\\"-95.69774544781215\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#22c55e\\" stroke-width=\\"16\\" stroke-dasharray=\\"26.09938512213059 200.0952859363345\\" stroke-dashoffset=\\"-191.3954908956243\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#ADB4BA\\" stroke-width=\\"16\\" stroke-dasharray=\\"8.699795040710196 217.4948760177549\\" stroke-dashoffset=\\"-217.4948760177549\\">
+</circle>
+<text x=\\"50\\" y=\\"48\\" text-anchor=\\"middle\\" class=\\"vmDashboardDonut__value\\">26</text>
+<text x=\\"50\\" y=\\"59\\" text-anchor=\\"middle\\" class=\\"vmDashboardDonut__label\\">findings</text>
+</svg>
+<ul class=\\"vmDashboardLegend\\">
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(220, 38, 38);\\">
+</span>
+<span>Critical</span>
+<strong>7 (26.9%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(249, 115, 22);\\">
+</span>
+<span>High</span>
+<strong>4 (15.4%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(234, 179, 8);\\">
+</span>
+<span>Medium</span>
+<strong>11 (42.3%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(34, 197, 94);\\">
+</span>
+<span>Low</span>
+<strong>3 (11.5%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(173, 180, 186);\\">
+</span>
+<span>No CVSS score</span>
+<strong>1 (3.8%)</strong>
+</li>
+</ul>
+</div>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">EPSS score distribution</h3>
+<svg class=\\"vmDashboardBars\\" viewBox=\\"0 0 560 190\\" role=\\"img\\" aria-label=\\"EPSS score distribution\\">
+<g>
+<rect x=\\"38.352000000000004\\" y=\\"18\\" width=\\"35.496\\" height=\\"134\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"56.10000000000001\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">26</text>
+<text x=\\"56.10000000000001\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.0-0.1</text>
+</g>
+<g>
+<rect x=\\"90.552\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"108.30000000000001\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"108.30000000000001\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.1-0.2</text>
+</g>
+<g>
+<rect x=\\"142.752\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"160.5\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"160.5\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.2-0.3</text>
+</g>
+<g>
+<rect x=\\"194.95200000000003\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"212.70000000000002\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"212.70000000000002\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.3-0.4</text>
+</g>
+<g>
+<rect x=\\"247.15200000000002\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"264.90000000000003\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"264.90000000000003\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.4-0.5</text>
+</g>
+<g>
+<rect x=\\"299.352\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"317.09999999999997\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"317.09999999999997\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.5-0.6</text>
+</g>
+<g>
+<rect x=\\"351.552\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"369.3\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"369.3\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.6-0.7</text>
+</g>
+<g>
+<rect x=\\"403.752\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"421.5\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"421.5\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.7-0.8</text>
+</g>
+<g>
+<rect x=\\"455.952\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"473.7\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"473.7\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.8-0.9</text>
+</g>
+<g>
+<rect x=\\"508.152\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"525.9\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"525.9\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.9-1.0</text>
+</g>
+</svg>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Findings per CVSS score</h3>
+<svg class=\\"vmDashboardBars\\" viewBox=\\"0 0 560 190\\" role=\\"img\\" aria-label=\\"Findings by CVSS score\\">
+<g>
+<rect x=\\"36.96\\" y=\\"152\\" width=\\"29.580000000000002\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"51.75\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"51.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0</text>
+</g>
+<g>
+<rect x=\\"80.46\\" y=\\"152\\" width=\\"29.580000000000002\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"95.25\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"95.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">1</text>
+</g>
+<g>
+<rect x=\\"123.96\\" y=\\"107.33333333333334\\" width=\\"29.580000000000002\\" height=\\"44.666666666666664\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"138.75\\" y=\\"103.33333333333334\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"138.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2</text>
+</g>
+<g>
+<rect x=\\"167.46\\" y=\\"129.66666666666666\\" width=\\"29.580000000000002\\" height=\\"22.333333333333332\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"182.25\\" y=\\"125.66666666666666\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"182.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">3</text>
+</g>
+<g>
+<rect x=\\"210.96\\" y=\\"107.33333333333334\\" width=\\"29.580000000000002\\" height=\\"44.666666666666664\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"225.75\\" y=\\"103.33333333333334\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"225.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">4</text>
+</g>
+<g>
+<rect x=\\"254.46\\" y=\\"18\\" width=\\"29.580000000000002\\" height=\\"134\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"269.25\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">6</text>
+<text x=\\"269.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">5</text>
+</g>
+<g>
+<rect x=\\"297.96\\" y=\\"85\\" width=\\"29.580000000000002\\" height=\\"67\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"312.75\\" y=\\"81\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">3</text>
+<text x=\\"312.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">6</text>
+</g>
+<g>
+<rect x=\\"341.46\\" y=\\"107.33333333333334\\" width=\\"29.580000000000002\\" height=\\"44.666666666666664\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"356.25\\" y=\\"103.33333333333334\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"356.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">7</text>
+</g>
+<g>
+<rect x=\\"384.96\\" y=\\"107.33333333333334\\" width=\\"29.580000000000002\\" height=\\"44.666666666666664\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"399.75\\" y=\\"103.33333333333334\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"399.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">8</text>
+</g>
+<g>
+<rect x=\\"428.46\\" y=\\"18\\" width=\\"29.580000000000002\\" height=\\"134\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"443.25\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">6</text>
+<text x=\\"443.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">9</text>
+</g>
+<g>
+<rect x=\\"471.96\\" y=\\"129.66666666666666\\" width=\\"29.580000000000002\\" height=\\"22.333333333333332\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"486.75\\" y=\\"125.66666666666666\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"486.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">10</text>
+</g>
+<g>
+<rect x=\\"515.46\\" y=\\"129.66666666666666\\" width=\\"29.580000000000002\\" height=\\"22.333333333333332\\" fill=\\"#ADB4BA\\" rx=\\"2\\">
+</rect>
+<text x=\\"530.25\\" y=\\"125.66666666666666\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"530.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">No score</text>
+</g>
+</svg>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Findings by publication year</h3>
+<div class=\\"vmDashboardYearScroll\\">
+<svg class=\\"vmDashboardBars\\" viewBox=\\"0 0 560 190\\" role=\\"img\\" aria-label=\\"Findings by publication year and severity\\">
+<g>
+<rect x=\\"24.666666666666664\\" y=\\"143.625\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"45.666666666666664\\" y=\\"139.625\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"45.666666666666664\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2000</text>
+</g>
+<g>
+<rect x=\\"116\\" y=\\"143.625\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#22c55e\\">
+</rect>
+<text x=\\"137\\" y=\\"139.625\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"137\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2005</text>
+</g>
+<g>
+<rect x=\\"207.33333333333331\\" y=\\"143.625\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#dc2626\\">
+</rect>
+<rect x=\\"207.33333333333331\\" y=\\"135.25\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"228.33333333333331\\" y=\\"131.25\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"228.33333333333331\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2006</text>
+</g>
+<g>
+<rect x=\\"298.6666666666667\\" y=\\"118.5\\" width=\\"42\\" height=\\"33.5\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"319.6666666666667\\" y=\\"114.5\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">4</text>
+<text x=\\"319.6666666666667\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2007</text>
+</g>
+<g>
+<rect x=\\"390\\" y=\\"143.625\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#dc2626\\">
+</rect>
+<rect x=\\"390\\" y=\\"135.25\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"411\\" y=\\"131.25\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"411\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2020</text>
+</g>
+<g>
+<rect x=\\"481.3333333333333\\" y=\\"110.125\\" width=\\"42\\" height=\\"41.875\\" fill=\\"#dc2626\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"76.625\\" width=\\"42\\" height=\\"33.5\\" fill=\\"#f97316\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"43.125\\" width=\\"42\\" height=\\"33.5\\" fill=\\"#eab308\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"26.375\\" width=\\"42\\" height=\\"16.75\\" fill=\\"#22c55e\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"18\\" width=\\"42\\" height=\\"8.375\\" fill=\\"#ADB4BA\\">
+</rect>
+<text x=\\"502.3333333333333\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">16</text>
+<text x=\\"502.3333333333333\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2026</text>
+</g>
+</svg>
+</div>
+<div class=\\"euiText euiText--extraSmall\\">
+<div class=\\"euiTextColor euiTextColor--subdued\\">
+<p>Unknown publication date: 0</p>
+</div>
+</div>
+</div>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardCvePanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top CVEs by exploitation probability</h3>
+<div class=\\"euiBasicTable\\" data-test-subj=\\"vmDashboardCveTable\\">
+<div>
+<div class=\\"euiTableHeaderMobile\\">
+<div class=\\"euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow\\">
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+</div>
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+<div class=\\"euiTableSortMobile\\">
+<div class=\\"euiPopover euiPopover--anchorDownRight\\">
+<div class=\\"euiPopover__anchor\\">
+<button class=\\"euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiButtonEmpty--flushRight\\" type=\\"button\\">
+<span class=\\"euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--small euiIcon--inherit euiIcon-isLoading euiButtonContent__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path d=\\"M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z\\">
+</path>
+</svg>
+<span class=\\"euiButtonEmpty__text\\">Sorting</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<table tabindex=\\"-1\\" class=\\"euiTable euiTable--responsive\\" id=\\"X\\">
+<caption class=\\"euiScreenReaderOnly euiTableCaption\\">
+</caption>
+<thead>
+<tr>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_cve_0\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"CVE\\">CVE</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_findings_1\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Findings\\">Findings</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_assets_2\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Assets\\">Assets</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"descending\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_maxEpss_3\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton euiTableHeaderButton-isSorted\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Max EPSS\\">Max EPSS</span>
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiIcon-isLoading euiTableSortIcon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path d=\\"M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z\\">
+</path>
+</svg>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_kev_4\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"KEV\\">KEV</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_maxCvss_5\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Max CVSS\\">Max CVSS</span>
+</span>
+</button>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2021-0001</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0500</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2000-0486</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2005-3921</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">2.6</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2006-3906</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2006-4950</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">
+<span class=\\"euiBadge euiBadge--iconLeft\\" style=\\"background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);\\" title=\\"KEV\\">
+<span class=\\"euiBadge__content\\">
+<span class=\\"euiBadge__text\\">KEV</span>
+</span>
+</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">10.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-0199</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-2587</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.3</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-5547</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">4.3</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-5548</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.9</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2021-0002</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.3</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90000</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">2</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">2</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">
+<span class=\\"euiBadge euiBadge--iconLeft\\" style=\\"background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);\\" title=\\"KEV\\">
+<span class=\\"euiBadge__content\\">
+<span class=\\"euiBadge__text\\">KEV</span>
+</span>
+</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90001</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90002</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">2</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">2</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.1</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90003</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">8.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90004</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">8.1</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90005</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">7.5</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90006</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">7.5</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90007</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.5</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90008</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.9</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90009</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.3</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div>
+<div class=\\"euiSpacer euiSpacer--m\\">
+</div>
+<div class=\\"euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow\\">
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+<div class=\\"euiPopover euiPopover--anchorUpRight\\">
+<div class=\\"euiPopover__anchor\\">
+<button class=\\"euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall\\" type=\\"button\\" data-test-subj=\\"tablePaginationPopoverButton\\">
+<span class=\\"euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--small euiIcon--inherit euiIcon-isLoading euiButtonContent__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path d=\\"M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z\\">
+</path>
+</svg>
+<span class=\\"euiButtonEmpty__text\\">Rows per page: 20</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+<nav class=\\"euiPagination\\">
+<button disabled=\\"\\" class=\\"euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall\\" type=\\"button\\" aria-label=\\"Previous page\\" data-test-subj=\\"pagination-button-previous\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonIcon__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path d=\\"M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z\\">
+</path>
+</svg>
+</button>
+<ul class=\\"euiPagination__list\\">
+<li class=\\"euiPagination__item\\">
+<button disabled=\\"\\" class=\\"euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile\\" type=\\"button\\" aria-label=\\"Page 1 of 2\\" data-test-subj=\\"pagination-button-0\\" aria-current=\\"true\\" aria-controls=\\"X\\">
+<span class=\\"euiButtonContent euiButtonEmpty__content\\">
+<span class=\\"euiButtonEmpty__text\\">1</span>
+</span>
+</button>
+</li>
+<li class=\\"euiPagination__item\\">
+<a class=\\"euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiPaginationButton euiPaginationButton--hideOnMobile\\" href=\\"X\\" rel=\\"noreferrer\\" aria-label=\\"Page 2 of 2\\" data-test-subj=\\"pagination-button-1\\" aria-controls=\\"X\\">
+<span class=\\"euiButtonContent euiButtonEmpty__content\\">
+<span class=\\"euiButtonEmpty__text\\">2</span>
+</span>
+</a>
+</li>
+</ul>
+<a class=\\"euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall\\" href=\\"X\\" rel=\\"noreferrer\\" aria-label=\\"Next page, 2\\" data-test-subj=\\"pagination-button-next\\" aria-controls=\\"X\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonIcon__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path d=\\"M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z\\">
+</path>
+</svg>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
 <section class=\\"vmReportSection vmCover\\">
 <h1 class=\\"euiTitle euiTitle--large\\">Vulnerability Assessment Report</h1>
 <div class=\\"euiSpacer euiSpacer--s\\">
@@ -15914,6 +17130,1226 @@ exports[`page rendering on the golden lab outputs vulnerability report with live
 <div class=\\"euiSpacer euiSpacer--m\\">
 </div>
 <div class=\\"vmReport\\" data-test-subj=\\"vmReport\\">
+<section class=\\"vmDashboard\\" data-test-subj=\\"vmVulnDashboard\\" aria-label=\\"Vulnerability dashboard\\">
+<div class=\\"vmDashboardTiles vmDashboardTiles--severity\\">
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--critical\\" aria-label=\\"Filter by Critical\\" data-test-subj=\\"vmDashboardSeverity-critical\\">
+<strong>8</strong>
+<span>Critical</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--high\\" aria-label=\\"Filter by High\\" data-test-subj=\\"vmDashboardSeverity-high\\">
+<strong>4</strong>
+<span>High</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--medium\\" aria-label=\\"Filter by Medium\\" data-test-subj=\\"vmDashboardSeverity-medium\\">
+<strong>14</strong>
+<span>Medium</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--low\\" aria-label=\\"Filter by Low\\" data-test-subj=\\"vmDashboardSeverity-low\\">
+<strong>3</strong>
+<span>Low</span>
+</button>
+<button type=\\"button\\" class=\\"vmDashboardTile vmDashboardTile--unknown\\" aria-label=\\"Filter by No CVSS score\\" data-test-subj=\\"vmDashboardSeverity-unknown\\">
+<strong>1</strong>
+<span>No CVSS score</span>
+</button>
+</div>
+<div class=\\"vmDashboardTiles vmDashboardTiles--summary\\">
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>30</strong>
+<span>Findings</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>27</strong>
+<span>Unique CVEs</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>5</strong>
+<span>Affected assets</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>4</strong>
+<span>CISA KEV findings</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>1</strong>
+<span>EPSS ≥ 0.5 findings</span>
+</div>
+<div class=\\"vmDashboardTile vmDashboardTile--neutral\\">
+<strong>0.5000</strong>
+<span>Max EPSS</span>
+</div>
+</div>
+<div class=\\"vmDashboardTopGrid\\">
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 CVEs</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"CVE-2026-90000\\">CVE-2026-90000</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"CVE-2026-90002\\">CVE-2026-90002</td>
+<td>2</td>
+</tr>
+<tr>
+<td title=\\"CVE-2000-0486\\">CVE-2000-0486</td>
+<td>1</td>
+</tr>
+<tr>
+<td title=\\"CVE-2005-3921\\">CVE-2005-3921</td>
+<td>1</td>
+</tr>
+<tr>
+<td title=\\"CVE-2006-3906\\">CVE-2006-3906</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 platforms</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"ubuntu\\">ubuntu</td>
+<td>20</td>
+</tr>
+<tr>
+<td title=\\"Cisco\\">Cisco</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 assets</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"web-01\\">web-01</td>
+<td>14</td>
+</tr>
+<tr>
+<td title=\\"L3-Switch\\">L3-Switch</td>
+<td>8</td>
+</tr>
+<tr>
+<td title=\\"db-01\\">db-01</td>
+<td>4</td>
+</tr>
+<tr>
+<td title=\\"L2-Switch\\">L2-Switch</td>
+<td>2</td>
+</tr>
+<tr>
+<td title=\\"wazuh-server\\">wazuh-server</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardTopPanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top 5 packages</h3>
+<table class=\\"vmTable vmDashboardTop\\">
+<thead>
+<tr>
+<th>Name</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td title=\\"Cisco IOS 12.2(55)SE12\\">Cisco IOS 12.2(55)SE12</td>
+<td>8</td>
+</tr>
+<tr>
+<td title=\\"lib0\\">lib0</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"lib1\\">lib1</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"lib2\\">lib2</td>
+<td>3</td>
+</tr>
+<tr>
+<td title=\\"lib3\\">lib3</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class=\\"vmDashboardChartGrid\\">
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Findings by severity</h3>
+<div class=\\"vmDashboardDonut\\">
+<svg viewBox=\\"0 0 100 100\\" role=\\"img\\" aria-label=\\"Findings by severity\\">
+<circle class=\\"vmDashboardDonut__track\\" cx=\\"50\\" cy=\\"50\\" r=\\"36\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#dc2626\\" stroke-width=\\"16\\" stroke-dasharray=\\"60.31857894892403 165.87609210954108\\" stroke-dashoffset=\\"0\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#f97316\\" stroke-width=\\"16\\" stroke-dasharray=\\"30.159289474462014 196.0353815840031\\" stroke-dashoffset=\\"-60.31857894892403\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#eab308\\" stroke-width=\\"16\\" stroke-dasharray=\\"105.55751316061705 120.63715789784806\\" stroke-dashoffset=\\"-90.47786842338604\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#22c55e\\" stroke-width=\\"16\\" stroke-dasharray=\\"22.61946710584651 203.5752039526186\\" stroke-dashoffset=\\"-196.0353815840031\\">
+</circle>
+<circle cx=\\"50\\" cy=\\"50\\" r=\\"36\\" fill=\\"none\\" stroke=\\"#ADB4BA\\" stroke-width=\\"16\\" stroke-dasharray=\\"7.5398223686155035 218.6548486898496\\" stroke-dashoffset=\\"-218.6548486898496\\">
+</circle>
+<text x=\\"50\\" y=\\"48\\" text-anchor=\\"middle\\" class=\\"vmDashboardDonut__value\\">30</text>
+<text x=\\"50\\" y=\\"59\\" text-anchor=\\"middle\\" class=\\"vmDashboardDonut__label\\">findings</text>
+</svg>
+<ul class=\\"vmDashboardLegend\\">
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(220, 38, 38);\\">
+</span>
+<span>Critical</span>
+<strong>8 (26.7%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(249, 115, 22);\\">
+</span>
+<span>High</span>
+<strong>4 (13.3%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(234, 179, 8);\\">
+</span>
+<span>Medium</span>
+<strong>14 (46.7%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(34, 197, 94);\\">
+</span>
+<span>Low</span>
+<strong>3 (10.0%)</strong>
+</li>
+<li>
+<span class=\\"vmDashboardLegend__dot\\" style=\\"background-color: rgb(173, 180, 186);\\">
+</span>
+<span>No CVSS score</span>
+<strong>1 (3.3%)</strong>
+</li>
+</ul>
+</div>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">EPSS score distribution</h3>
+<svg class=\\"vmDashboardBars\\" viewBox=\\"0 0 560 190\\" role=\\"img\\" aria-label=\\"EPSS score distribution\\">
+<g>
+<rect x=\\"38.352000000000004\\" y=\\"18\\" width=\\"35.496\\" height=\\"134\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"56.10000000000001\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">29</text>
+<text x=\\"56.10000000000001\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.0-0.1</text>
+</g>
+<g>
+<rect x=\\"90.552\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"108.30000000000001\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"108.30000000000001\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.1-0.2</text>
+</g>
+<g>
+<rect x=\\"142.752\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"160.5\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"160.5\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.2-0.3</text>
+</g>
+<g>
+<rect x=\\"194.95200000000003\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"212.70000000000002\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"212.70000000000002\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.3-0.4</text>
+</g>
+<g>
+<rect x=\\"247.15200000000002\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"264.90000000000003\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"264.90000000000003\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.4-0.5</text>
+</g>
+<g>
+<rect x=\\"299.352\\" y=\\"147.3793103448276\\" width=\\"35.496\\" height=\\"4.620689655172414\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"317.09999999999997\\" y=\\"143.3793103448276\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"317.09999999999997\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.5-0.6</text>
+</g>
+<g>
+<rect x=\\"351.552\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"369.3\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"369.3\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.6-0.7</text>
+</g>
+<g>
+<rect x=\\"403.752\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"421.5\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"421.5\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.7-0.8</text>
+</g>
+<g>
+<rect x=\\"455.952\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"473.7\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"473.7\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.8-0.9</text>
+</g>
+<g>
+<rect x=\\"508.152\\" y=\\"152\\" width=\\"35.496\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"525.9\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"525.9\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0.9-1.0</text>
+</g>
+</svg>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Findings per CVSS score</h3>
+<svg class=\\"vmDashboardBars\\" viewBox=\\"0 0 560 190\\" role=\\"img\\" aria-label=\\"Findings by CVSS score\\">
+<g>
+<rect x=\\"36.96\\" y=\\"152\\" width=\\"29.580000000000002\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"51.75\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"51.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">0</text>
+</g>
+<g>
+<rect x=\\"80.46\\" y=\\"152\\" width=\\"29.580000000000002\\" height=\\"0\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"95.25\\" y=\\"148\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">0</text>
+<text x=\\"95.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">1</text>
+</g>
+<g>
+<rect x=\\"123.96\\" y=\\"113.71428571428572\\" width=\\"29.580000000000002\\" height=\\"38.285714285714285\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"138.75\\" y=\\"109.71428571428572\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"138.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2</text>
+</g>
+<g>
+<rect x=\\"167.46\\" y=\\"132.85714285714286\\" width=\\"29.580000000000002\\" height=\\"19.142857142857142\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"182.25\\" y=\\"128.85714285714286\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"182.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">3</text>
+</g>
+<g>
+<rect x=\\"210.96\\" y=\\"94.57142857142858\\" width=\\"29.580000000000002\\" height=\\"57.42857142857142\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"225.75\\" y=\\"90.57142857142858\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">3</text>
+<text x=\\"225.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">4</text>
+</g>
+<g>
+<rect x=\\"254.46\\" y=\\"18\\" width=\\"29.580000000000002\\" height=\\"134\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"269.25\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">7</text>
+<text x=\\"269.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">5</text>
+</g>
+<g>
+<rect x=\\"297.96\\" y=\\"75.42857142857143\\" width=\\"29.580000000000002\\" height=\\"76.57142857142857\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"312.75\\" y=\\"71.42857142857143\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">4</text>
+<text x=\\"312.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">6</text>
+</g>
+<g>
+<rect x=\\"341.46\\" y=\\"113.71428571428572\\" width=\\"29.580000000000002\\" height=\\"38.285714285714285\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"356.25\\" y=\\"109.71428571428572\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"356.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">7</text>
+</g>
+<g>
+<rect x=\\"384.96\\" y=\\"113.71428571428572\\" width=\\"29.580000000000002\\" height=\\"38.285714285714285\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"399.75\\" y=\\"109.71428571428572\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"399.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">8</text>
+</g>
+<g>
+<rect x=\\"428.46\\" y=\\"18\\" width=\\"29.580000000000002\\" height=\\"134\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"443.25\\" y=\\"14\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">7</text>
+<text x=\\"443.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">9</text>
+</g>
+<g>
+<rect x=\\"471.96\\" y=\\"132.85714285714286\\" width=\\"29.580000000000002\\" height=\\"19.142857142857142\\" fill=\\"var(--vm-dashboard-bar)\\" rx=\\"2\\">
+</rect>
+<text x=\\"486.75\\" y=\\"128.85714285714286\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"486.75\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">10</text>
+</g>
+<g>
+<rect x=\\"515.46\\" y=\\"132.85714285714286\\" width=\\"29.580000000000002\\" height=\\"19.142857142857142\\" fill=\\"#ADB4BA\\" rx=\\"2\\">
+</rect>
+<text x=\\"530.25\\" y=\\"128.85714285714286\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"530.25\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">No score</text>
+</g>
+</svg>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel \\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Findings by publication year</h3>
+<div class=\\"vmDashboardYearScroll\\">
+<svg class=\\"vmDashboardBars\\" viewBox=\\"0 0 560 190\\" role=\\"img\\" aria-label=\\"Findings by publication year and severity\\">
+<g>
+<rect x=\\"24.666666666666664\\" y=\\"145.3\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"45.666666666666664\\" y=\\"141.3\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"45.666666666666664\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2000</text>
+</g>
+<g>
+<rect x=\\"116\\" y=\\"145.3\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#22c55e\\">
+</rect>
+<text x=\\"137\\" y=\\"141.3\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">1</text>
+<text x=\\"137\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2005</text>
+</g>
+<g>
+<rect x=\\"207.33333333333331\\" y=\\"145.3\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#dc2626\\">
+</rect>
+<rect x=\\"207.33333333333331\\" y=\\"138.60000000000002\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"228.33333333333331\\" y=\\"134.60000000000002\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"228.33333333333331\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2006</text>
+</g>
+<g>
+<rect x=\\"298.6666666666667\\" y=\\"125.2\\" width=\\"42\\" height=\\"26.8\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"319.6666666666667\\" y=\\"121.2\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">4</text>
+<text x=\\"319.6666666666667\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2007</text>
+</g>
+<g>
+<rect x=\\"390\\" y=\\"145.3\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#dc2626\\">
+</rect>
+<rect x=\\"390\\" y=\\"138.60000000000002\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#eab308\\">
+</rect>
+<text x=\\"411\\" y=\\"134.60000000000002\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">2</text>
+<text x=\\"411\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2020</text>
+</g>
+<g>
+<rect x=\\"481.3333333333333\\" y=\\"111.80000000000001\\" width=\\"42\\" height=\\"40.199999999999996\\" fill=\\"#dc2626\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"85.00000000000001\\" width=\\"42\\" height=\\"26.8\\" fill=\\"#f97316\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"38.100000000000016\\" width=\\"42\\" height=\\"46.9\\" fill=\\"#eab308\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"24.700000000000017\\" width=\\"42\\" height=\\"13.4\\" fill=\\"#22c55e\\">
+</rect>
+<rect x=\\"481.3333333333333\\" y=\\"18.000000000000018\\" width=\\"42\\" height=\\"6.7\\" fill=\\"#ADB4BA\\">
+</rect>
+<text x=\\"502.3333333333333\\" y=\\"14.000000000000018\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__value\\">20</text>
+<text x=\\"502.3333333333333\\" y=\\"174\\" text-anchor=\\"middle\\" class=\\"vmDashboardBars__label\\">2026</text>
+</g>
+</svg>
+</div>
+<div class=\\"euiText euiText--extraSmall\\">
+<div class=\\"euiTextColor euiTextColor--subdued\\">
+<p>Unknown publication date: 0</p>
+</div>
+</div>
+</div>
+</div>
+<div class=\\"euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--hasBorder vmDashboardPanel vmDashboardCvePanel\\">
+<h3 class=\\"euiTitle euiTitle--xxsmall\\">Top CVEs by exploitation probability</h3>
+<div class=\\"euiBasicTable\\" data-test-subj=\\"vmDashboardCveTable\\">
+<div>
+<div class=\\"euiTableHeaderMobile\\">
+<div class=\\"euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow\\">
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+</div>
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+<div class=\\"euiTableSortMobile\\">
+<div class=\\"euiPopover euiPopover--anchorDownRight\\">
+<div class=\\"euiPopover__anchor\\">
+<button class=\\"euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiButtonEmpty--flushRight\\" type=\\"button\\">
+<span class=\\"euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path fill-rule=\\"non-zero\\" d=\\"M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z\\">
+</path>
+</svg>
+<span class=\\"euiButtonEmpty__text\\">Sorting</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<table tabindex=\\"-1\\" class=\\"euiTable euiTable--responsive\\" id=\\"X\\">
+<caption class=\\"euiScreenReaderOnly euiTableCaption\\">
+</caption>
+<thead>
+<tr>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_cve_0\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"CVE\\">CVE</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_findings_1\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Findings\\">Findings</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_assets_2\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Assets\\">Assets</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"descending\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_maxEpss_3\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton euiTableHeaderButton-isSorted\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Max EPSS\\">Max EPSS</span>
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiTableSortIcon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path d=\\"M7 11.692V3.556C7 3.249 7.224 3 7.5 3s.5.249.5.556v8.136l4.096-4.096a.5.5 0 0 1 .707.707l-4.242 4.243a1.494 1.494 0 0 1-.925.433.454.454 0 0 1-.272 0 1.494 1.494 0 0 1-.925-.433L2.197 8.303a.5.5 0 1 1 .707-.707L7 11.692Z\\">
+</path>
+</svg>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_kev_4\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"KEV\\">KEV</span>
+</span>
+</button>
+</th>
+<th class=\\"euiTableHeaderCell\\" scope=\\"col\\" role=\\"columnheader\\" aria-sort=\\"none\\" aria-live=\\"polite\\" data-test-subj=\\"tableHeaderCell_maxCvss_5\\">
+<button type=\\"button\\" class=\\"euiTableHeaderButton\\" data-test-subj=\\"tableHeaderSortButton\\">
+<span class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\" title=\\"Max CVSS\\">Max CVSS</span>
+</span>
+</button>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90020</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.5000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.1</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2021-0001</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0500</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2000-0486</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2005-3921</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">2.6</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2006-3906</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2006-4950</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">
+<span class=\\"euiBadge euiBadge--iconLeft\\" style=\\"background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);\\" title=\\"KEV\\">
+<span class=\\"euiBadge__content\\">
+<span class=\\"euiBadge__text\\">KEV</span>
+</span>
+</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">10.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-0199</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.0</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-2587</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.3</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-5547</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">4.3</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2007-5548</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.9</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2021-0002</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.3</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90000</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">3</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">3</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">
+<span class=\\"euiBadge euiBadge--iconLeft\\" style=\\"background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);\\" title=\\"KEV\\">
+<span class=\\"euiBadge__content\\">
+<span class=\\"euiBadge__text\\">KEV</span>
+</span>
+</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90001</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90002</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">2</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">2</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">9.1</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90003</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">8.8</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90004</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">8.1</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90005</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">7.5</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90006</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">7.5</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90007</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">6.5</div>
+</td>
+</tr>
+<tr class=\\"euiTableRow\\">
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">CVE</div>
+<div class=\\"euiTableCellContent\\">
+<span class=\\"euiTableCellContent__text\\">CVE-2026-90008</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Findings</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Assets</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight\\">
+<span class=\\"euiTableCellContent__text\\">1</span>
+</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max EPSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">0.0000</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">KEV</div>
+<div class=\\"euiTableCellContent euiTableCellContent--overflowingContent\\">No</div>
+</td>
+<td class=\\"euiTableRowCell\\">
+<div class=\\"euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop\\">Max CVSS</div>
+<div class=\\"euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent\\">5.9</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div>
+<div class=\\"euiSpacer euiSpacer--m\\">
+</div>
+<div class=\\"euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow\\">
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+<div class=\\"euiPopover euiPopover--anchorUpRight\\">
+<div class=\\"euiPopover__anchor\\">
+<button class=\\"euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall\\" type=\\"button\\" data-test-subj=\\"tablePaginationPopoverButton\\">
+<span class=\\"euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path fill-rule=\\"non-zero\\" d=\\"M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z\\">
+</path>
+</svg>
+<span class=\\"euiButtonEmpty__text\\">Rows per page: 20</span>
+</span>
+</button>
+</div>
+</div>
+</div>
+<div class=\\"euiFlexItem euiFlexItem--flexGrowZero\\">
+<nav class=\\"euiPagination\\">
+<button disabled=\\"\\" class=\\"euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall\\" type=\\"button\\" aria-label=\\"Previous page\\" data-test-subj=\\"pagination-button-previous\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path fill-rule=\\"nonzero\\" d=\\"M10.843 13.069 6.232 8.384a.546.546 0 0 1 0-.768l4.61-4.685a.552.552 0 0 0 0-.771.53.53 0 0 0-.759 0l-4.61 4.684a1.65 1.65 0 0 0 0 2.312l4.61 4.684a.53.53 0 0 0 .76 0 .552.552 0 0 0 0-.771Z\\">
+</path>
+</svg>
+</button>
+<ul class=\\"euiPagination__list\\">
+<li class=\\"euiPagination__item\\">
+<button disabled=\\"\\" class=\\"euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile\\" type=\\"button\\" aria-label=\\"Page 1 of 2\\" data-test-subj=\\"pagination-button-0\\" aria-current=\\"true\\" aria-controls=\\"X\\">
+<span class=\\"euiButtonContent euiButtonEmpty__content\\">
+<span class=\\"euiButtonEmpty__text\\">1</span>
+</span>
+</button>
+</li>
+<li class=\\"euiPagination__item\\">
+<a class=\\"euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiPaginationButton euiPaginationButton--hideOnMobile\\" href=\\"X\\" rel=\\"noreferrer\\" aria-label=\\"Page 2 of 2\\" data-test-subj=\\"pagination-button-1\\" aria-controls=\\"X\\">
+<span class=\\"euiButtonContent euiButtonEmpty__content\\">
+<span class=\\"euiButtonEmpty__text\\">2</span>
+</span>
+</a>
+</li>
+</ul>
+<a class=\\"euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall\\" href=\\"X\\" rel=\\"noreferrer\\" aria-label=\\"Next page, 2\\" data-test-subj=\\"pagination-button-next\\" aria-controls=\\"X\\">
+<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"16\\" height=\\"16\\" viewBox=\\"0 0 16 16\\" class=\\"euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon\\" focusable=\\"false\\" role=\\"img\\" aria-hidden=\\"true\\">
+<path fill-rule=\\"nonzero\\" d=\\"m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z\\">
+</path>
+</svg>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
 <section class=\\"vmReportSection vmCover\\">
 <h1 class=\\"euiTitle euiTitle--large\\">Vulnerability Assessment Report</h1>
 <div class=\\"euiSpacer euiSpacer--s\\">

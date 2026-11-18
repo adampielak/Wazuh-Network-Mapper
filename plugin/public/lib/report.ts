@@ -43,6 +43,7 @@ export type AssetCve = Pick<OvssFinding, typeof OVSS_KEYS[number]> & {
   confidence: Confidence;
   package: string | null;
   version: string | null;
+  published_at?: string | null;
 };
 
 export type SeverityCounts = Record<Severity, number>;
@@ -128,6 +129,8 @@ export function buildAssetReports(
         confidence: f.source === 'osv' ? 'potential' : confidence,
         package: f.package,
         version: f.version,
+        published_at: cat?.published_at ?? undefined,
+        epss: f.epss ?? 0,
       });
     }
     // Worst-first: by OVSS, then CVSS (nulls last), then CVE id; the CVE that

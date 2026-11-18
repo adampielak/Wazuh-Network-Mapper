@@ -213,6 +213,84 @@
   color: $euiTextSubduedColor;
 }
 
+.vmDashboard {
+  margin-bottom: $euiSizeXL;
+  --vm-dashboard-bar: #{$euiColorPrimary};
+  color: $euiTextColor;
+}
+.vmDashboardTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: $euiSizeS;
+  margin-bottom: $euiSizeM;
+}
+.vmDashboardTile {
+  display: flex;
+  min-height: 64px;
+  flex-direction: column;
+  justify-content: center;
+  padding: $euiSizeS $euiSizeM;
+  border: 1px solid $euiBorderColor;
+  border-left: 4px solid $euiColorMediumShade;
+  border-radius: $euiBorderRadius;
+  background: $euiColorEmptyShade;
+  color: $euiTextColor;
+  text-align: left;
+  strong { font-size: $euiFontSizeL; line-height: 1.2; }
+  span { color: $euiTextSubduedColor; font-size: $euiFontSizeXS; }
+  &--critical { border-left-color: $euiColorDanger; }
+  &--high { border-left-color: $euiColorWarning; }
+  &--medium { border-left-color: $euiColorPrimary; }
+  &--low { border-left-color: $euiColorSuccess; }
+  &--unknown, &--neutral { border-left-color: $euiColorMediumShade; }
+}
+button.vmDashboardTile { cursor: pointer; font: inherit; }
+button.vmDashboardTile:hover, button.vmDashboardTile:focus-visible {
+  box-shadow: 0 0 0 2px $euiColorPrimary;
+  outline: none;
+}
+.vmDashboardTopGrid,
+.vmDashboardChartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $euiSizeM;
+  margin-bottom: $euiSizeM;
+}
+.vmDashboardPanel {
+  min-width: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  > .euiTitle { margin-bottom: $euiSizeS; }
+}
+.vmDashboardTop { margin-top: 0; }
+.vmDashboardTop th:last-child,
+.vmDashboardTop td:last-child { text-align: right; }
+.vmDashboardTop td:first-child { overflow-wrap: anywhere; }
+.vmDashboardDonut {
+  display: flex;
+  align-items: center;
+  gap: $euiSizeL;
+  svg { flex: 0 0 150px; width: 150px; max-width: 42%; overflow: visible; transform: rotate(-90deg); }
+  &__track { fill: none; stroke: $euiColorLightShade; stroke-width: 16; }
+  &__value, &__label { fill: $euiTextColor; transform: rotate(90deg); transform-origin: 50% 50%; }
+  &__value { font-size: 13px; font-weight: 700; }
+  &__label { fill: $euiTextSubduedColor; font-size: 6px; }
+}
+.vmDashboardLegend {
+  flex: 1 1 auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: $euiSizeXS; margin: $euiSizeXS 0; font-size: $euiFontSizeXS; }
+  strong { text-align: right; }
+  &__dot { width: 8px; height: 8px; border-radius: 50%; }
+}
+.vmDashboardBars { display: block; width: 100%; min-height: 150px; overflow: visible; }
+.vmDashboardBars__value { fill: $euiTextColor; font-size: 10px; }
+.vmDashboardBars__label { fill: $euiTextSubduedColor; font-size: 9px; }
+.vmDashboardYearScroll { overflow-x: auto; }
+.vmDashboardCvePanel { margin-top: $euiSizeM; }
+
 .vmSeverityGroup {
   display: flex;
   flex-wrap: wrap;
@@ -259,6 +337,21 @@
   .vmReport .vmChartTrack {
     fill: #eef0f3 !important;
   }
+  .vmDashboard {
+    page-break-after: always;
+    color: #000 !important;
+  }
+  .vmDashboardPanel,
+  .vmDashboardTile,
+  .vmDashboardTopGrid,
+  .vmDashboardChartGrid,
+  .vmDashboardCvePanel {
+    page-break-inside: avoid;
+  }
+  .vmDashboardTile {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .vmReport *:not(.vmChip__dot):not(.vmChartSeg):not(.vmChartTrack) {
     background: transparent !important;
     color: #000 !important;
@@ -272,7 +365,10 @@
   /* the severity dots and the inline-SVG chart fills must keep their colour */
   .vmChip__dot,
   .vmChart,
-  .vmChart rect {
+  .vmChart rect,
+  .vmDashboard svg,
+  .vmDashboard svg rect,
+  .vmDashboard svg circle {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -312,6 +408,12 @@
       content: 'Page ' counter(page);
     }
   }
+}
+
+@media (max-width: 767px) {
+  .vmDashboardTopGrid,
+  .vmDashboardChartGrid { grid-template-columns: minmax(0, 1fr); }
+  .vmDashboardDonut { gap: $euiSizeS; }
 }
 
 // staged filters: an Apply button with changes waiting stands out

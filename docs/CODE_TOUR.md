@@ -24,6 +24,13 @@ All Python paths are under `backend/vulnmapper/`, plugin paths under `plugin/`.
 | Scan history | Keeps the last 10 successful scans and compares each with the one before | `server/history.ts` (archive, index, pruning), `public/lib/scanChanges.ts` (what changed), `public/components/scan/ScanHistory.tsx`, `public/components/overview/SinceLastScan.tsx` |
 | Plugin pages | Overview, topology map, scan settings, attack paths, vulnerability report, recommendations | `public/components/<page>/`, shared data hooks and pure helpers in `public/lib/`, file types in `common/types.ts` |
 
+### Vulnerability dashboard
+
+`public/components/vulnreport/Dashboard.tsx` renders the report's dashboard;
+`public/lib/vulnDashboard.ts` aggregates the already-filtered asset reports.
+The dashboard is printed before the report cover and uses publication dates
+from the CVE catalogue plus graph vendors as platform labels.
+
 ## How data moves through a scan
 
 1. The plugin server starts `python -m vulnmapper` with the options the user

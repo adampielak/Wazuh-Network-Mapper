@@ -1,0 +1,9 @@
+{
+  "catalogVersion": "synthetic",
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2099-0001",
+      "knownRansomwareCampaignUse": "Unknown"
+    }
+  ]
+}

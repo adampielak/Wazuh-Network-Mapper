@@ -60,6 +60,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="emit only SNMP-polled infrastructure: drop every "
                              "unpollable node (no credential / no management "
                              "address) and any edge touching one.")
+    parser.add_argument("--checklist", action="store_true",
+                        help="collect the per-device configuration data used by the "
+                             "checklist stage of the full pipeline.")
     parser.add_argument("-o", "--output", metavar="PATH",
                         help="write the JSON document to PATH (UTF-8, no BOM) "
                              "instead of stdout. Avoids the UTF-16 a PowerShell "
@@ -84,6 +87,7 @@ def parse_config(argv: Optional[list[str]] = None) -> Config:
         port=args.port,
         pollable_only=args.pollable_only,
         output_path=args.output,
+        checklist=args.checklist,
     )
 
 

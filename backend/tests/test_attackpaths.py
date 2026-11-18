@@ -206,6 +206,24 @@ class TestReachability(unittest.TestCase):
                   {"endpoint:target": {"importance": "high"}}, edges=edges)
         self.assertEqual(doc["targets"][0]["routes"], [])
 
+    def test_router_scopes_its_vlans_to_observed_neighbor_components(self):
+        source = host("endpoint:source", 10, cves=[cve("C", 9.0)], agent="001")
+        target = host("endpoint:target", 20, cves=[cve("C", 9.0)], risk=5.0)
+        switch_a = {"node_id": "device:switch-a", "kind": "device", "role": "l2-switch"}
+        switch_b = {"node_id": "device:switch-b", "kind": "device", "role": "l2-switch"}
+        router = dev("device:router", "router", [10, 20])
+        edges = [{"source": source["node_id"], "target": switch_a["node_id"],
+                  "type": "endpoint_link"},
+                 {"source": target["node_id"], "target": switch_b["node_id"],
+                  "type": "endpoint_link"},
+                 {"source": router["node_id"], "target": switch_a["node_id"],
+                  "type": "lldp"},
+                 {"source": router["node_id"], "target": switch_b["node_id"],
+                  "type": "lldp"}]
+        doc = run([source, target, switch_a, switch_b, router],
+                  {"endpoint:target": {"importance": "high"}}, edges=edges)
+        self.assertTrue(doc["targets"][0]["routes"][0]["crosses_router"])
+
     def test_same_vid_in_different_sites_has_no_direct_or_routed_edge(self):
         source = host("endpoint:source", 116, cves=[cve("C", 9.0)], agent="001")
         target = host("endpoint:target", 116, cves=[cve("C", 9.0)], risk=5.0)

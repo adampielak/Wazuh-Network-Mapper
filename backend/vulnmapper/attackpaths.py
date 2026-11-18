@@ -197,6 +197,7 @@ class AttackPathEngine:
         self.by_id = {n["node_id"]: n for n in graph["nodes"]}
         self.l2_component = self._l2_components()
         self.placed, self.not_placed = self.placement()
+        self.component_vlans = self._component_vlan_ids()
         self.vlan_keys = {nid: self._node_vlan_keys(nid, vlans)
                            for nid, vlans in self.placed.items()}
         self.candidates = {nid: self._candidates(self.by_id[nid]) for nid in self.placed}
@@ -249,6 +250,15 @@ class AttackPathEngine:
         component = component or self.l2_component.get(node["node_id"], node["node_id"])
         return node.get("site"), component, int(vlan)
 
+    def _component_vlan_ids(self) -> dict:
+        vlans_by_component: dict[str, set] = {}
+        for nid, vlans in self.placed.items():
+            if self.by_id[nid].get("role") in ROUTER_ROLES:
+                continue
+            component = self.l2_component[nid]
+            vlans_by_component.setdefault(component, set()).update(vlans)
+        return vlans_by_component
+
     def _node_vlan_keys(self, nid: str, vlans: set) -> set:
         node = self.by_id[nid]
         if node.get("role") not in ROUTER_ROLES:
@@ -266,8 +276,12 @@ class AttackPathEngine:
                 neighbours.add(self.l2_component[other])
         if not neighbours:
             neighbours = {self.l2_component.get(nid, nid)}
+            side_vlans = {self.l2_component.get(nid, nid): vlans}
+        else:
+            side_vlans = {component: vlans & self.component_vlans.get(component, set())
+                          for component in neighbours}
         return {self._vlan_key(node, vlan, component)
-                for component in neighbours for vlan in vlans}
+                for component, side in side_vlans.items() for vlan in side}
 
     def _router_vlan_keys(self, nid: str, vlans: set) -> set:
         return self._node_vlan_keys(nid, vlans)

@@ -12,8 +12,9 @@ port. This follows [RFC 2863, The Interfaces Group MIB](https://www.rfc-editor.o
 VLAN membership is keyed by `(site, L2 component, VID)` when a site is present,
 and `(L2 component, VID)` otherwise. The component is built from graph edges
 between nodes, without traversing router or L3-switch boundaries. A router's
-VLAN keys use the component of each adjacent non-router neighbour; when that
-side cannot be identified, its own component is used. This follows the VLAN
+VLAN keys use the component of each adjacent non-router neighbour where that
+VID is observed; a VID not observed on any neighbour side is not inferred.
+When no neighbour side can be identified, its own component is used. This follows the VLAN
 bridging scope represented by [RFC 4363, Q-BRIDGE-MIB](https://www.rfc-editor.org/rfc/rfc4363)
 and [IEEE 802.1Q, Bridges and Bridged Networks](https://standards.ieee.org/ieee/802.1q/10323/).
 Existing output `vlans` remains a list of integer VIDs; `vlan_keys` also exposes

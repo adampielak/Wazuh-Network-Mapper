@@ -2,6 +2,37 @@
 
 Decisions on review items, agreed with the team before they were changed.
 
+## B8. Q-BRIDGE VLAN membership is collected as device evidence
+
+The network crawl reads `dot1qVlanCurrentEgressPorts` and
+`dot1qVlanCurrentUntaggedPorts` from the Q-BRIDGE-MIB current VLAN table, and
+`dot1qPvid` from the port VLAN table. The current VLAN entry index is
+`{dot1qVlanTimeMark, dot1qVlanIndex}` (RFC 4363 section 5); when a VLAN has
+multiple TimeMarks, collection keeps the row with the highest TimeMark. The
+PortList bit order follows RFC 4363 section 3.3: each octet represents eight
+bridge ports, with its most significant bit representing the lowest port
+number. `dot1qVlanCurrentEgressPorts` and
+`dot1qVlanCurrentUntaggedPorts` are defined in RFC 4363 section 5.
+
+The network node field is optional and has this shape:
+
+```json
+{
+  "source": "q-bridge",
+  "vlans": {"10": {"tagged": ["Gi0/1"], "untagged": ["Gi0/2"]}},
+  "pvid": {"Gi0/2": 10},
+  "unmapped_bridge_ports": 0
+}
+```
+
+Tagged membership is egress membership minus untagged membership. Bridge ports
+are joined through `dot1dBasePortIfIndex`, then `ifName` or fallback `ifDescr`.
+An unmapped bridge port is preserved as `bridge_port:<number>` and counted.
+When the checklist already read PVID, the crawl reuses its parsed rows rather
+than walking `dot1qPvid` again. Devices returning no rows omit the field.
+Vendor-specific membership tables are an extension point; vendor fallbacks:
+pending A5.
+
 ## B7. Exposure is an opt-in pipeline stage
 
 Without `--zones`, the scan records no exposure stage or timing entry, preserving

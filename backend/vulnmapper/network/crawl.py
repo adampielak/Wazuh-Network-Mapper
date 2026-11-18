@@ -37,6 +37,7 @@ from .parse import (
     collect_ifname_map,
     collect_own_macs,
     collect_ports,
+    collect_vlan_membership,
     collect_wifi_clients,
     looks_like_access_point,
     needs_port_resolution,
@@ -219,10 +220,10 @@ class Crawler:
         for nb in cdp:
             await self._handle_cdp_neighbor(chassis_id, nb)
 
+        config = await self._read_config(ip, chassis_id, info) if self._checklist else None
+        pvid_map = (config.get("pvid") or {}) if config and not config.get("failed") else None
         await self._read_tables(ip, chassis_id, access_point, neighbor_ports, uplink_ports,
-                                own_macs)
-        if self._checklist:
-            await self._read_config(ip, chassis_id, info)
+                                own_macs, pvid_map)
 
     async def _identify(self, ip: str, expected_cid: Optional[str], via: str):
         """``(chassis_id, identity, own MACs)`` for a device polled here for the
@@ -279,7 +280,8 @@ class Crawler:
         return access_point
 
     async def _read_tables(self, ip: str, chassis_id: str, access_point: bool,
-                           neighbor_ports: set, uplink_ports: set, own_macs: list) -> None:
+                           neighbor_ports: set, uplink_ports: set, own_macs: list,
+                           pvid_map: Optional[dict] = None) -> None:
         """The forwarding, ARP and port-status tables host placement reads."""
         try:
             # An access point's clients come from its association table. Its
@@ -291,6 +293,11 @@ class Crawler:
         except Exception:  # an unsupported MIB must not abort the device
             log.exception("FDB/ARP collection failed for %s", ip)
             fdb_entries, arp, port_status, ports = [], {}, {}, []
+        try:
+            vlan_membership = await collect_vlan_membership(self._client, ip, pvid_map)
+        except Exception:
+            log.exception("Q-BRIDGE VLAN collection failed for %s", ip)
+            vlan_membership = None
         async with self._lock:
             dev = self._devices.get(chassis_id)
             if dev is not None:
@@ -301,8 +308,9 @@ class Crawler:
                 dev.ports = ports
                 dev.arp = arp
                 dev.own_macs = own_macs
+                dev.vlan_membership = vlan_membership
 
-    async def _read_config(self, ip: str, chassis_id: str, info: dict) -> None:
+    async def _read_config(self, ip: str, chassis_id: str, info: dict) -> dict:
         """The configuration-check tables (only when the checklist is on)."""
         from ..checklist.collect import collect_config
         try:
@@ -314,6 +322,7 @@ class Crawler:
             config = {"failed": True}
         async with self._lock:
             self._devices[chassis_id].config_data = config
+        return config
 
     async def _walk_cdp(self, ip: str) -> list[Neighbor]:
         """The CDP neighbour table, plus the port names when it has rows."""

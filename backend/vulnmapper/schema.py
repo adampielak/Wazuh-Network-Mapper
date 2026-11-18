@@ -272,6 +272,9 @@ class Node:
     # Every interface [{name, oper, admin, type, speed_mbps, alias, state}]
     # by ifIndex (assemble.ports); None when the crawl read none.
     ports: Optional[list] = None
+    # Q-BRIDGE membership: source, per-VLAN tagged/untagged ports, PVID map,
+    # and the count of bridge ports that could not be mapped to an ifIndex.
+    vlan_membership: Optional[dict] = None
     # The software family the crawler recognised (devicecves.families); None
     # when not known, and then not emitted.
     software_family: Optional[str] = None
@@ -340,6 +343,8 @@ class Node:
                 out["port_status"] = self.port_status
             if self.ports is not None:
                 out["ports"] = self.ports
+            if self.vlan_membership is not None:
+                out["vlan_membership"] = self.vlan_membership
             if self.wifi_clients is not None:
                 out["wifi_clients"] = self.wifi_clients
             if self.software_family is not None:

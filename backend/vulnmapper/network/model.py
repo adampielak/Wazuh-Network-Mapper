@@ -85,6 +85,8 @@ class Device:
     # Every interface by ifIndex: [{name, oper, admin, type, speed_mbps,
     # alias}] (parse.build_ports); the assembler adds each one's state.
     ports: list = field(default_factory=list)
+    # Current Q-BRIDGE VLAN membership and per-port PVID evidence.
+    vlan_membership: Optional[dict] = None
     # The LLDP capability bitmap advertised for this device; the assembler
     # decodes it into a role.
     lldp_cap_enabled: Optional[str] = None
@@ -134,6 +136,8 @@ class Device:
             node["inferred_ports"] = sorted(self.inferred_ports)
         if self.ports:
             node["ports"] = self.ports
+        if self.vlan_membership is not None:
+            node["vlan_membership"] = self.vlan_membership
         if self.platform is not None:
             node["platform"] = self.platform
         if self.access_point:

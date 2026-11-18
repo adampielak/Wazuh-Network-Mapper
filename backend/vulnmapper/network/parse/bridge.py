@@ -22,6 +22,9 @@ IFTYPE_BASE = "1.3.6.1.2.1.2.2.1.3"                   # ifType (IANAifType numbe
 IFHIGHSPEED_BASE = "1.3.6.1.2.1.31.1.1.1.15"          # ifHighSpeed (Mbit/s)
 IFALIAS_BASE = "1.3.6.1.2.1.31.1.1.1.18"              # ifAlias (the port description)
 DOT1Q_VLAN_STATIC_NAME_BASE = "1.3.6.1.2.1.17.7.1.4.3.1.1"  # dot1qVlanStaticName
+DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE = "1.3.6.1.2.1.17.7.1.4.2.1.4"
+DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE = "1.3.6.1.2.1.17.7.1.4.2.1.5"
+_DOT1Q_PVID_BASE = "1.3.6.1.2.1.17.7.1.4.5.1.1"
 VTP_VLAN_STATE_BASE = "1.3.6.1.4.1.9.9.46.1.3.1.1.2"  # Cisco vtpVlanState (VLAN list)
 ARP_BASE = "1.3.6.1.2.1.4.22.1.2"                     # ipNetToMediaPhysAddress (IP<->MAC)
 IFPHYS_BASE = "1.3.6.1.2.1.2.2.1.6"                   # ifPhysAddress (device's own MACs)
@@ -64,6 +67,106 @@ def parse_vlan_static_names(rows: list[tuple[str, Optional[str]]]) -> dict[int, 
         except ValueError:
             continue
     return out
+
+
+def decode_portlist(value: Optional[str]) -> list[int]:
+    """Decode an SNMP Q-BRIDGE PortList into ascending bridge port numbers."""
+    if value is None:
+        return []
+    if isinstance(value, bytes):
+        octets = value
+    else:
+        raw = str(value).strip()
+        if not raw:
+            return []
+        raw = re.sub(r"^(?:hex-string:|0x)", "", raw, flags=re.IGNORECASE).strip()
+        compact = re.sub(r"\s+", "", raw)
+        try:
+            octets = bytes.fromhex(compact)
+        except ValueError:
+            return []
+
+    return [octet_index * 8 + bit_index + 1
+            for octet_index, octet in enumerate(octets)
+            for bit_index in range(8) if octet & (0x80 >> bit_index)]
+
+
+def _vlan_current_rows(rows: list[tuple[str, Optional[str]]], base: str) -> dict[int, tuple[int, list[int]]]:
+    """Return one latest ``(TimeMark, ports)`` row for each VLAN index."""
+    latest: dict[int, tuple[int, list[int]]] = {}
+    for oid, value in rows:
+        index = index_after(oid, base)
+        parts = index.split(".") if index is not None else []
+        if len(parts) != 2 or value is None:
+            continue
+        try:
+            time_mark, vlan = map(int, parts)
+        except ValueError:
+            continue
+        current = latest.get(vlan)
+        if current is None or time_mark > current[0]:
+            latest[vlan] = (time_mark, decode_portlist(value))
+    return latest
+
+
+def build_vlan_membership(
+    egress_rows: list[tuple[str, Optional[str]]],
+    untagged_rows: list[tuple[str, Optional[str]]],
+    pvid_rows: list[tuple[str, Optional[str]]],
+    baseport_rows: list[tuple[str, Optional[str]]],
+    ifname_rows: Optional[list[tuple[str, Optional[str]]]] = None,
+    ifdescr_rows: Optional[list[tuple[str, Optional[str]]]] = None,
+    pvid_map: Optional[dict[str, int]] = None,
+) -> Optional[dict]:
+    """Build deterministic Q-BRIDGE membership and PVID data for one device."""
+    egress = _vlan_current_rows(egress_rows, DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE)
+    untagged = _vlan_current_rows(untagged_rows, DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE)
+    bridge_to_ifindex = parse_baseport_ifindex(baseport_rows)
+    ifnames = parse_ifnames(ifname_rows or [])
+    if not ifnames and ifdescr_rows:
+        ifnames = parse_ifnames(ifdescr_rows, base=IFDESCR_BASE)
+
+    def port_name(bridge_port: str) -> str:
+        ifindex = bridge_to_ifindex.get(bridge_port)
+        return f"bridge_port:{bridge_port}" if ifindex is None else ifnames.get(ifindex, ifindex)
+
+    vlans: dict[str, dict[str, list[str]]] = {}
+    for vlan in sorted(set(egress) | set(untagged)):
+        egress_ports = set(egress.get(vlan, (0, []))[1])
+        untagged_ports = set(untagged.get(vlan, (0, []))[1])
+        vlans[str(vlan)] = {
+            "tagged": sorted({port_name(str(port)) for port in egress_ports - untagged_ports}),
+            "untagged": sorted({port_name(str(port)) for port in untagged_ports}),
+        }
+
+    pvid: dict[str, int] = {}
+    unmapped: set[str] = set()
+    if pvid_map is not None:
+        for bridge_port, vlan in pvid_map.items():
+            pvid[port_name(str(bridge_port))] = int(vlan)
+            if str(bridge_port) not in bridge_to_ifindex:
+                unmapped.add(str(bridge_port))
+    else:
+        for oid, value in pvid_rows:
+            index = index_after(oid, _DOT1Q_PVID_BASE)
+            if index is None or value is None:
+                continue
+            try:
+                bridge_port = index
+                pvid[port_name(bridge_port)] = int(value)
+            except ValueError:
+                continue
+            if bridge_port not in bridge_to_ifindex:
+                unmapped.add(bridge_port)
+
+    for port_lists in vlans.values():
+        for port in port_lists["tagged"] + port_lists["untagged"]:
+            if port.startswith("bridge_port:"):
+                unmapped.add(port.split(":", 1)[1])
+    if not egress_rows and not untagged_rows and not pvid_rows and not pvid_map:
+        return None
+    return {"source": "q-bridge", "vlans": vlans, "pvid": dict(sorted(pvid.items())),
+            "unmapped_bridge_ports": len(unmapped)}
 
 
 def parse_arp(rows: list[tuple[str, Optional[str]]]) -> dict[str, str]:

@@ -11,6 +11,8 @@ from .bridge import (
     ARP_BASE,
     DOT1D_BASEPORT_IFINDEX_BASE,
     DOT1D_FDB_PORT_BASE,
+    DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE,
+    DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE,
     DOT1Q_FDB_PORT_BASE,
     DOT1Q_VLAN_STATIC_NAME_BASE,
     IFADMINSTATUS_BASE,
@@ -26,6 +28,7 @@ from .bridge import (
     build_fdb,
     build_port_status,
     build_ports,
+    build_vlan_membership,
     parse_arp,
     parse_ifnames,
     parse_ifphys_ifindex,
@@ -242,3 +245,30 @@ async def collect_ports(client, ip: str) -> tuple[dict, list]:
                         cols[IFHIGHSPEED_BASE], cols[IFALIAS_BASE], ifname_rows, ifdescr_rows)
     _log_fdb.info("%s: port_status has %d port(s)", ip, len(status))
     return status, ports
+
+
+async def collect_vlan_membership(client, ip: str,
+                                  pvid_map: Optional[dict] = None) -> Optional[dict]:
+    """Read Q-BRIDGE membership, reusing parsed PVID rows when checklist read them.
+
+    Vendor-specific membership tables can be added here after research.
+    """
+    from ...checklist.tables import DOT1Q_PVID
+
+    bases = [DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE,
+             DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE,
+             DOT1D_BASEPORT_IFINDEX_BASE]
+    if pvid_map is None:
+        bases.append(DOT1Q_PVID)
+    columns = await client.walk_columns(ip, bases)
+    ifnames = await client.walk(ip, IFNAME_BASE)
+    ifdescr = await client.walk(ip, IFDESCR_BASE) if not ifnames else []
+    return build_vlan_membership(
+        columns[DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE],
+        columns[DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE],
+        columns.get(DOT1Q_PVID, []),
+        columns[DOT1D_BASEPORT_IFINDEX_BASE],
+        ifnames,
+        ifdescr,
+        pvid_map=pvid_map,
+    )

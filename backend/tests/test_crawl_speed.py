@@ -158,15 +158,21 @@ class TestMultiColumnWalk(unittest.TestCase):
 
     def test_the_crawl_reads_the_port_columns_once_per_device(self):
         from vulnmapper.network.parse import collect
+        from vulnmapper.network import parse
+        from vulnmapper.checklist.tables import DOT1Q_PVID
 
         fake = lab()
         crawl(fake)
         six = (collect.IFOPERSTATUS_BASE, collect.IFNAME_BASE, collect.IFADMINSTATUS_BASE,
                collect.IFTYPE_BASE, collect.IFHIGHSPEED_BASE, collect.IFALIAS_BASE)
+        qbridge = (parse.DOT1Q_VLAN_CURRENT_EGRESS_PORTS_BASE,
+                   parse.DOT1Q_VLAN_CURRENT_UNTAGGED_PORTS_BASE,
+                   parse.DOT1D_BASEPORT_IFINDEX_BASE,)
         polled = {c[1] for c in fake.calls if c[0] == "walk_columns"}
         self.assertTrue(polled)
         for ip in polled:
-            self.assertEqual([c[2] for c in fake.calls if c[0] == "walk_columns" and c[1] == ip], [six])
+            calls = [c[2] for c in fake.calls if c[0] == "walk_columns" and c[1] == ip]
+            self.assertEqual(calls, [six, qbridge + (DOT1Q_PVID,)])
             # ifName is also read on its own where LLDP names a port by number or
             # MAC (Comware/HP, collect_ifname_map); the other five never are
             self.assertFalse([c for c in fake.calls if c[0] == "walk" and c[1] == ip

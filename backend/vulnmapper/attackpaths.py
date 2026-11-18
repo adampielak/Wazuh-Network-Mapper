@@ -57,11 +57,11 @@ SOURCES = [
 ]
 
 REACHABILITY = [
-    "Assets in the same VLAN reach each other directly.",
+    "Assets in the same VLAN and site reach each other directly; without a site, VLANs are device-local.",
     "Assets in different VLANs reach each other only through a device whose role "
     "is router or l3-switch with an up layer-3 interface in both VLANs; the "
     "lowest-id qualifying router is used.",
-    "Routed VLANs are derived offline from each device's interface names.",
+    "Routed VLANs are derived offline from each device's interface names and site.",
     "Firewall and access-control rules are not read, so a route that crosses a "
     "router shows only that the two VLANs are routed, not that traffic is "
     "permitted.",
@@ -77,6 +77,7 @@ LIMITS = [
     "Spare-port lists are truncated by the checklist, so a start may stand for "
     "more ports than it lists.",
     "Assets with no known VLAN are left out of reachability.",
+    "A CVE with requires_peer is usable only from a node listed in the target's matching protocol peer field.",
     "An unverified asset is shown as unverified, not as safe.",
 ]
 
@@ -93,10 +94,15 @@ def _qualifies(row: dict, cross_router: bool) -> bool:
     return row["attack_vector"] in ("NETWORK", "ADJACENT")
 
 
-def _best_weakness(candidates: list, cross_router: bool) -> Optional[dict]:
+def _best_weakness(candidates: list, cross_router: bool,
+                   source_id: Optional[str] = None, target: Optional[dict] = None) -> Optional[dict]:
     """The easiest qualifying CVE: highest step value, ties to the higher score."""
     best = None
     for r in candidates:
+        protocol = r.get("requires_peer")
+        if protocol and (source_id is None or
+                         source_id not in (target or {}).get(f"{protocol}_peers", [])):
+            continue
         if not _qualifies(r, cross_router):
             continue
         value = STEP_BY_COMPLEXITY.get(r["attack_complexity"])
@@ -138,10 +144,11 @@ def _context_findings(node: dict) -> list:
             for f in node.get("config_findings") or [] if f["id"] not in MISCONFIG_CHECKS]
 
 
-def _takeover(node: dict, candidates: list, cross_router: bool) -> Optional[dict]:
+def _takeover(node: dict, candidates: list, cross_router: bool,
+              source_id: Optional[str] = None) -> Optional[dict]:
     """The best way to take ``node`` over in this scope (weakness or, in-VLAN, a
     misconfiguration): higher step value, a CVE winning an exact tie."""
-    options = [o for o in (_best_weakness(candidates, cross_router),
+    options = [o for o in (_best_weakness(candidates, cross_router, source_id, node),
                            None if cross_router else _best_misconfig(node)) if o]
     if not options:
         return None
@@ -187,13 +194,11 @@ class AttackPathEngine:
         self.keep = keep
         self.by_id = {n["node_id"]: n for n in graph["nodes"]}
         self.placed, self.not_placed = self.placement()
+        self.vlan_keys = {nid: {self._vlan_key(self.by_id[nid], vlan) for vlan in vlans}
+                           for nid, vlans in self.placed.items()}
         self.candidates = {nid: self._candidates(self.by_id[nid]) for nid in self.placed}
         self.routers = {nid: self._routes(n) for nid, n in self.by_id.items()
                         if n.get("role") in ROUTER_ROLES and self._routes(n)}
-        # The best takeover of each placed asset, keyed by whether the attacker
-        # crosses a router to reach it (False: same VLAN, True: across).
-        self.takeover = {nid: {cross: _takeover(self.by_id[nid], self.candidates[nid], cross)
-                               for cross in (False, True)} for nid in self.placed}
         self.starts, self.offline_starts = self.find_starts()
         self.reachability = self.reachability_graph()
 
@@ -209,6 +214,17 @@ class AttackPathEngine:
 
     def _routes(self, node: dict) -> set:
         return self._l3_vlans(node) if node.get("role") in ROUTER_ROLES else set()
+
+    def _route_keys(self, node: dict) -> set:
+        return {self._vlan_key(node, vlan) for vlan in self._routes(node)}
+
+    @staticmethod
+    def _domain(node: dict) -> str:
+        return str(node["site"]) if node.get("site") else f"device:{node['node_id']}"
+
+    @classmethod
+    def _vlan_key(cls, node: dict, vlan: int) -> tuple:
+        return cls._domain(node), int(vlan)
 
     @staticmethod
     def _radio_vlans(ap: dict, radio: Optional[str]) -> set:
@@ -239,7 +255,7 @@ class AttackPathEngine:
                 ap = self.by_id.get(node["wifi"].get("access_point"))
                 vlans = self._radio_vlans(ap, radio) if ap else set()
                 if len(vlans) == 1:
-                    placed[nid] = set(vlans)
+                    placed[nid] = vlans
                 else:
                     why = (f"the radio {radio} has {len(vlans)} up sub-interfaces; its VLAN "
                            "is ambiguous" if vlans else
@@ -261,6 +277,8 @@ class AttackPathEngine:
                 c = cat.get(f.get("cve"))
                 if c and all(k in c for k in FOUR):
                     rows.append({"cve": f["cve"], "cvss": c.get("cvss"),
+                                 **({"requires_peer": c["requires_peer"]}
+                                    if c.get("requires_peer") else {}),
                                  **{k: c[k] for k in FOUR}})
         else:
             for r in node.get("top_cves") or []:
@@ -272,7 +290,7 @@ class AttackPathEngine:
 
     def _router_between(self, a_vlans: set, b_vlans: set, exclude: set) -> Optional[str]:
         for rid in sorted(self.routers):             # lowest node id among qualifiers
-            routed = self.routers[rid]
+            routed = {self._vlan_key(self.by_id[rid], vlan) for vlan in self.routers[rid]}
             if rid not in exclude and routed & a_vlans and routed & b_vlans:
                 return rid
         return None
@@ -284,12 +302,12 @@ class AttackPathEngine:
         target, never a stepping stone.
         """
         g = nx.DiGraph()
-        members = dict(self.placed)
+        members = dict(self.vlan_keys)
         for s in self.starts:
             if "membership" in s:
                 members[s["id"]] = s["membership"]
         for u, mu in members.items():
-            for v, mv in self.placed.items():
+            for v, mv in self.vlan_keys.items():
                 if u == v:
                     continue
                 if mu & mv:
@@ -299,7 +317,7 @@ class AttackPathEngine:
                     if router is None:
                         continue
                     cross = True
-                step = self.takeover[v][cross]
+                step = _takeover(self.by_id[v], self.candidates[v], cross, source_id=u)
                 if step is None:
                     continue
                 g.add_edge(u, v, weight=-math.log(step["value"]), step=step,
@@ -333,7 +351,10 @@ class AttackPathEngine:
                 offline.append({"id": nid, "kind": kind, "reason": "offline",
                                 "detail": "not answering the liveness check"})
                 continue
-            starts.append({"id": nid, "kind": kind, "vlans": sorted(self.placed[nid])})
+            starts.append({"id": nid, "kind": kind,
+                           "vlans": sorted(self.placed[nid]),
+                           "vlan_keys": [{"domain": d, "vid": v}
+                                         for d, v in sorted(self.vlan_keys[nid])]})
         return starts + self._spare_starts(), offline
 
     def _spare_starts(self) -> list:
@@ -351,13 +372,17 @@ class AttackPathEngine:
             truncated = ev.get("total") is not None and ev["total"] > len(listed)
             by_vlan: dict = {}
             for p in listed:
-                by_vlan.setdefault(p["vlan"], []).append(p["port"])
+                if p.get("admin") == "up":
+                    by_vlan.setdefault(p["vlan"], []).append(p["port"])
             for vlan, ports in sorted(by_vlan.items()):
+                membership = {self._vlan_key(node, vlan)}
                 starts.append({"id": f"start:spare-ports:{nid}:{vlan}", "kind": "spare_ports",
                                "switch": nid, "switch_label": self._label(nid),
-                               "vlans": [vlan], "ports": ports,
+                               "vlans": [vlan], "vlan_keys": [{"domain": k[0], "vid": k[1]}
+                                                                  for k in sorted(membership)],
+                               "ports": ports,
                                "listed_ports": len(ports), "spare_ports_on_switch": ev.get("total"),
-                               "list_truncated": truncated, "membership": {vlan}})
+                               "list_truncated": truncated, "membership": membership})
         return starts
 
     # ---- routes -----------------------------------------------------------------

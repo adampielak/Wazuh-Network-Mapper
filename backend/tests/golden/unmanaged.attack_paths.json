@@ -38,9 +38,9 @@
       }
     ],
     "reachability": [
-      "Assets in the same VLAN reach each other directly.",
+      "Assets in the same VLAN and site reach each other directly; without a site, VLANs are device-local.",
       "Assets in different VLANs reach each other only through a device whose role is router or l3-switch with an up layer-3 interface in both VLANs; the lowest-id qualifying router is used.",
-      "Routed VLANs are derived offline from each device's interface names.",
+      "Routed VLANs are derived offline from each device's interface names and site.",
       "Firewall and access-control rules are not read, so a route that crosses a router shows only that the two VLANs are routed, not that traffic is permitted."
     ],
     "limits": [
@@ -52,6 +52,7 @@
       "Only the single highest-likelihood route is kept per target and start.",
       "Spare-port lists are truncated by the checklist, so a start may stand for more ports than it lists.",
       "Assets with no known VLAN are left out of reachability.",
+      "A CVE with requires_peer is usable only from a node listed in the target's matching protocol peer field.",
       "An unverified asset is shown as unverified, not as safe."
     ],
     "most_shared_asset": null
@@ -72,6 +73,12 @@
       "kind": "unmanaged_host",
       "vlans": [
         10
+      ],
+      "vlan_keys": [
+        {
+          "domain": "device:host:00:50:56:bb:00:01",
+          "vid": 10
+        }
       ]
     },
     {
@@ -79,6 +86,12 @@
       "kind": "unmanaged_host",
       "vlans": [
         10
+      ],
+      "vlan_keys": [
+        {
+          "domain": "device:host:00:50:56:bb:00:02",
+          "vid": 10
+        }
       ]
     }
   ],

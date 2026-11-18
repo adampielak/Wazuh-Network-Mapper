@@ -306,7 +306,9 @@ class DeviceChecker:
         if found:
             enabled = sum(ifs[i]["admin"] == t.UP for i in found)
             return FAIL, None, {
-                "ports": [{"port": self._port_name(i), "vlan": vlan_of[i]}
+                "ports": [{"port": self._port_name(i), "vlan": vlan_of[i],
+                           "admin": ("up" if ifs[i]["admin"] == t.UP else
+                                     "down" if ifs[i]["admin"] == t.DOWN else None)}
                           for i in found[:EVIDENCE_CAP]],
                 "total": len(found), "enabled": enabled, "shut_down": len(found) - enabled,
                 "down_recently_not_counted": recent, "unused_vlans": unused, **extra}

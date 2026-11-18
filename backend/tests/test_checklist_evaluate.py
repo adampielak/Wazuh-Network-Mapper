@@ -87,7 +87,8 @@ class TestLabCaptures(unittest.TestCase):
             "spare-ports-in-used-vlan": "fail", "access-ports-default-vlan": "fail",
             "bpdu-guard-missing": "fail", "port-security-disabled": "fail"})
         spare = finding(out, "spare-ports-in-used-vlan")["evidence"]
-        self.assertEqual(spare["ports"][0], {"port": "FastEthernet1/0/5", "vlan": 40})
+        self.assertEqual(spare["ports"][0], {"port": "FastEthernet1/0/5", "vlan": 40,
+                                             "admin": "up"})
         self.assertEqual((spare["total"], spare["enabled"], spare["shut_down"]), (19, 18, 1))
         # its own Vlan10..Vlan100 interfaces are up, except Vlan1 and Vlan50
         self.assertEqual(spare["unused_vlans"], [50])
@@ -108,7 +109,7 @@ class TestLabCaptures(unittest.TestCase):
         spare = finding(out, "spare-ports-in-used-vlan")["evidence"]
         self.assertEqual((spare["total"], len(spare["ports"])), (48, EVIDENCE_CAP))
         self.assertEqual(spare["unused_vlans"], [])
-        self.assertIn({"port": "FastEthernet0/3", "vlan": 10}, spare["ports"])
+        self.assertIn({"port": "FastEthernet0/3", "vlan": 10, "admin": "up"}, spare["ports"])
         self.assertEqual(finding(out, "port-security-disabled")["evidence"]["total"], 48)
 
     def test_hp_switch(self):
@@ -235,7 +236,8 @@ class TestChecks(unittest.TestCase):
         ifs = config()["interfaces"]
         ifs[2] = iface("FastEthernet0/2", oper=t.DOWN, last_change=1000)   # spare, VLAN 10 live
         self.assertEqual(self.check(cid, config(interfaces=ifs)),
-                         ("fail", None, {"ports": [{"port": "FastEthernet0/2", "vlan": 10}],
+                         ("fail", None, {"ports": [{"port": "FastEthernet0/2", "vlan": 10,
+                                                      "admin": "up"}],
                                          "total": 1, "enabled": 1, "shut_down": 0,
                                          "down_recently_not_counted": 0,
                                          "unused_vlans": []}))
@@ -267,7 +269,8 @@ class TestChecks(unittest.TestCase):
             own = {**ifs, 199: iface(name, if_type=53)}
             result = self.check(cid, config(interfaces=own, vm_vlan={1: 10, 2: 10, 3: 99}))
             self.assertEqual((result[0], result[2]["ports"]),
-                             ("fail", [{"port": "FastEthernet0/3", "vlan": 99}]), name)
+                             ("fail", [{"port": "FastEthernet0/3", "vlan": 99,
+                                         "admin": "up"}]), name)
         # a VLAN interface that is down proves nothing
         down = {**ifs, 199: iface("Vlan99", oper=t.DOWN, if_type=53)}
         self.assertEqual(self.check(cid, config(interfaces=down,
@@ -319,7 +322,8 @@ class TestChecks(unittest.TestCase):
         ifs[3] = iface("FastEthernet0/3", oper=t.DOWN, last_change=1000)
         result = self.check("spare-ports-in-used-vlan",
                             config(interfaces=ifs, vm_vlan={1: 10, 2: 10, 3: 1}))
-        self.assertEqual(result[2]["ports"], [{"port": "FastEthernet0/3", "vlan": 1}])
+        self.assertEqual(result[2]["ports"], [{"port": "FastEthernet0/3", "vlan": 1,
+                                               "admin": "up"}])
 
     def test_recently_down_ports_are_not_counted(self):
         ifs = config()["interfaces"]
@@ -441,7 +445,8 @@ class TestEvidenceCap(unittest.TestCase):
         evidence = finding(out, "spare-ports-in-used-vlan")["evidence"]
         self.assertEqual(len(evidence["ports"]), EVIDENCE_CAP)
         self.assertEqual(evidence["total"], 30)
-        self.assertEqual(evidence["ports"][0], {"port": "FastEthernet0/1", "vlan": 10})
+        self.assertEqual(evidence["ports"][0], {"port": "FastEthernet0/1", "vlan": 10,
+                                                "admin": "up"})
 
 
 class TestFinding(unittest.TestCase):
@@ -575,7 +580,7 @@ class TestJunosPortMeta(unittest.TestCase):
         result, out = self.spare(meta=JUNOS_META)
         self.assertEqual(result, "fail")
         ev = finding(out, "spare-ports-in-used-vlan")["evidence"]
-        self.assertEqual(ev["ports"], [{"port": "xe-0/0/40", "vlan": 10}])
+        self.assertEqual(ev["ports"], [{"port": "xe-0/0/40", "vlan": 10, "admin": "up"}])
         self.assertEqual((ev["total"], ev["described_not_counted"], ev["trunk_excluded"]), (1, 1, 1))
 
     def test_pass_when_only_assigned_ports_are_down(self):

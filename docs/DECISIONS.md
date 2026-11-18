@@ -2,6 +2,27 @@
 
 Decisions on review items, agreed with the team before they were changed.
 
+## B2. Attack-path reachability uses administratively up ports and scoped VLANs
+
+An `ifAdminStatus` of down(2) means an interface is administratively disabled,
+so it cannot be an attack start even when the spare-port hygiene finding still
+reports it. The finding keeps its result and includes `admin` on each listed
+port. This follows [RFC 2863, The Interfaces Group MIB](https://www.rfc-editor.org/rfc/rfc2863).
+
+VLAN membership is keyed by `(site, VID)`, consistent with the VLAN context in
+[RFC 4363, Q-BRIDGE-MIB](https://www.rfc-editor.org/rfc/rfc4363). Nodes without
+a site receive a node-local domain, avoiding inferred L2 connectivity between
+devices whose shared VLAN context is unknown. Existing output `vlans` remains a
+list of integer VIDs; `vlan_keys` also exposes the scoped identity.
+
+An explicitly classified CVE row may set `requires_peer` to a protocol such as
+`bgp`. The CVE lookup/catalogue can supply this field; the attack-path engine
+does not infer it from descriptions or CVSS. Such a weakness is usable only if
+the source node ID is listed in the target's matching peer field, for example
+`bgp_peers`. Missing peer data is unknown and does not qualify. The peer list
+must represent established peers, as defined by `bgpPeerState` established(6)
+in [RFC 4273, Definitions of Managed Objects for BGP-4](https://www.rfc-editor.org/rfc/rfc4273).
+
 ## Q3. Automatic rescan: off by default (was on)
 
 `vulnmapper.liveness.autoRescan` now defaults to false. Liveness itself is

@@ -3105,7 +3105,7 @@
         "name": "Attack paths",
         "status": "ran",
         "seconds": "FROZEN",
-        "note": "2 routes to 2 protected assets"
+        "note": "0 routes to 2 protected assets"
       }
     ]
   }

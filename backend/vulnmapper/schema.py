@@ -278,6 +278,10 @@ class Node:
     # ---- discovery stamping (set by the assembler) ----
     discovery_order: Optional[int] = None
     parent_id: Optional[str] = None
+    # Optional L2 domain used to disambiguate VLAN IDs across sites.
+    site: Optional[str] = None
+    # Peer node IDs for explicitly classified protocol-dependent CVEs.
+    bgp_peers: Optional[list] = None
 
     def to_dict(self) -> dict:
         out: dict[str, Any] = {
@@ -298,10 +302,14 @@ class Node:
             "discovery_order": self.discovery_order,
             "parent_id": self.parent_id,
         }
+        if self.site is not None:
+            out["site"] = self.site
         if self.kind == KIND_ENDPOINT:
             out["agent_id"] = self.agent_id
             out["stale"] = self.stale
             out["top_cves"] = self.top_cves
+            if self.bgp_peers is not None:
+                out["bgp_peers"] = self.bgp_peers
             out["cve_summary"] = self.cve_summary
             if self.is_wazuh_server:
                 out["is_wazuh_server"] = True
@@ -319,6 +327,8 @@ class Node:
                 out["chassis_id"] = self.chassis_id    # a host that announced itself over LLDP/CDP
         else:
             out["chassis_id"] = self.chassis_id
+            if self.bgp_peers is not None:
+                out["bgp_peers"] = self.bgp_peers
             out["pollable"] = self.pollable
             if self.neighbor_ports is not None:
                 out["neighbor_ports"] = self.neighbor_ports

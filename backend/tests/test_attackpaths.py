@@ -32,6 +32,7 @@ def cve(cid, score, av="NETWORK", ac="LOW", pr="NONE", ui="NONE", ver="3.1"):
 def dev(nid, role, vlans_up, findings=None, cves=None, risk=None, vendor="Cisco"):
     ports = {f"Vl{v}": "up" for v in vlans_up}
     return {"node_id": nid, "kind": "device", "role": role, "vendor": vendor,
+            "site": "test-site",
             "port_status": ports, "config_findings": findings or [],
             "top_cves": cves or [], "risk_score": risk, "parent_id": None}
 
@@ -39,7 +40,7 @@ def dev(nid, role, vlans_up, findings=None, cves=None, risk=None, vendor="Cisco"
 def host(nid, vlan, cves=None, risk=None, agent=None, unmanaged=False, wifi=None,
          wazuh=False, parent=None):
     n = {"node_id": nid, "kind": "endpoint", "vlan": vlan, "top_cves": cves or [],
-         "risk_score": risk, "parent_id": parent}
+         "risk_score": risk, "parent_id": parent, "site": "test-site"}
     if agent:
         n["agent_id"] = agent
     if unmanaged:
@@ -53,6 +54,11 @@ def host(nid, vlan, cves=None, risk=None, agent=None, unmanaged=False, wifi=None
 
 def finding(check_id, **extra):
     from vulnmapper.checklist.catalogue import by_id
+    evidence = extra.get("evidence")
+    if check_id == "spare-ports-in-used-vlan" and evidence:
+        extra["evidence"] = {**evidence, "ports": [
+            {"admin": "up", **port} if "admin" not in port else port
+            for port in evidence.get("ports", [])]}
     return {"id": check_id, "title": by_id(check_id)["title"],
             "severity": by_id(check_id)["severity"], **extra}
 
@@ -88,6 +94,14 @@ class TestQualifies(unittest.TestCase):
         v4 = cve("C4", 8.1, ver="4.0")               # Attack Requirements unread, not discarded
         self.assertTrue(ap._qualifies(v2, True))
         self.assertTrue(ap._qualifies(v4, True))
+
+    def test_protocol_peer_is_required_only_when_cve_declares_it(self):
+        row = {**cve("C-BGP", 9.0), "requires_peer": "bgp"}
+        target = {"bgp_peers": ["endpoint:peer"]}
+        self.assertIsNone(ap._best_weakness([row], False, "endpoint:other", target))
+        self.assertEqual(ap._best_weakness([row], False, "endpoint:peer", target)["cve"],
+                         "C-BGP")
+        self.assertEqual(ap._best_weakness([cve("C", 9.0)], False)["cve"], "C")
 
 
 class TestBestStep(unittest.TestCase):
@@ -164,7 +178,46 @@ class TestReachability(unittest.TestCase):
     def test_lowest_id_router_on_a_tie(self):
         engine = ap.AttackPathEngine(graph([dev("device:b", "router", [10, 20]),
                                             dev("device:a", "router", [10, 20])]), None, None)
-        self.assertEqual(engine._router_between({10}, {20}, set()), "device:a")
+        self.assertEqual(engine._router_between({("test-site", 10)}, {("test-site", 20)}, set()),
+                         "device:a")
+
+    def test_same_vid_in_different_sites_has_no_direct_or_routed_edge(self):
+        source = host("endpoint:source", 116, cves=[cve("C", 9.0)], agent="001")
+        target = host("endpoint:target", 116, cves=[cve("C", 9.0)], risk=5.0)
+        router = dev("device:router", "router", [116, 117])
+        source["site"], target["site"], router["site"] = "site-a", "site-b", "site-b"
+        other_target = host("endpoint:other", 117, cves=[cve("C", 9.0)], risk=4.0)
+        other_target["site"] = "site-b"
+        doc = run([source, target, other_target, router],
+                  {"endpoint:target": {"importance": "high"},
+                   "endpoint:other": {"importance": "high"}})
+        routes = {block["id"]: block["routes"] for block in doc["targets"]}
+        self.assertEqual(routes["endpoint:target"], [])
+        self.assertEqual(routes["endpoint:other"], [])
+
+    def test_same_vid_within_one_site_still_has_direct_edge(self):
+        doc = run([host("endpoint:source", 116, cves=[cve("C", 9.0)], agent="001"),
+                   host("endpoint:target", 116, cves=[cve("C", 9.0)], risk=5.0)],
+                  {"endpoint:target": {"importance": "high"}})
+        self.assertEqual(doc["targets"][0]["routes"][0]["start"], "endpoint:source")
+
+    def test_bgp_weakness_requires_source_peer_evidence(self):
+        source = host("endpoint:peer", 10, cves=[cve("SOURCE", 9.0)], agent="001")
+        target = host("endpoint:target", 10,
+                      cves=[{**cve("BGP", 9.0), "requires_peer": "bgp"}], risk=5.0)
+        blocked = run([source, target], {"endpoint:target": {"importance": "high"}})
+        self.assertEqual(blocked["targets"][0]["routes"], [])
+        target["bgp_peers"] = ["endpoint:peer"]
+        allowed = run([source, target], {"endpoint:target": {"importance": "high"}})
+        self.assertEqual(allowed["targets"][0]["routes"][0]["steps"][0]["cve"], "BGP")
+
+    def test_admin_down_spare_port_is_not_a_start(self):
+        switch = dev("device:switch", "l3-switch", [116], findings=[finding(
+            "spare-ports-in-used-vlan", evidence={"ports": [
+                {"port": "Gi1/0/7", "vlan": 116, "admin": "down"}], "total": 1,
+                "enabled": 0, "shut_down": 1})])
+        doc = run([switch], {})
+        self.assertEqual(doc["starting_points"], [])
 
 
 # --- steps, stepping stones, start kinds ------------------------------------

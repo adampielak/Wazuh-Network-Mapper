@@ -10,7 +10,10 @@ the existing graph output. With `--zones`, exposure writes a separate
 wired to this output yet. Only `metadata.stages` and `metadata.timing` gain an
 Exposure entry; graph nodes and edges stay unchanged. `source_scan` links the
 exposure document to the graph's finalized `metadata.scan_time`. Invalid exposure
-input fails only this stage and leaves the scan graph available.
+input fails only this stage and leaves the scan graph available. The exposure
+file is replaced only after a successful evaluation; a failed stage or CLI run
+leaves any prior file in place. Consumers must compare `source_scan` with the
+graph's `metadata.scan_time` and treat a mismatch as stale.
 
 ## B6. Exposure evaluation uses explicit zone mappings
 

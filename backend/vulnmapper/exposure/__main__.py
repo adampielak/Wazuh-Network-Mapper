@@ -20,8 +20,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _document(graph: dict, zones: dict, kev: dict | None) -> dict:
-    result = compute_exposure(graph, zones, kev)
+def _document(graph: dict, zones_path: str, kev_path: str | None) -> dict:
+    result = compute_exposure(graph, zones_path, kev_path)
     counts = {
         "nodes_with_items": sum(bool(items) for items in result["nodes"].values()),
         "items": sum(len(items) for items in result["nodes"].values()),
@@ -42,14 +42,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         with open(args.graph, encoding="utf-8") as f:
             graph = json.load(f)
-        with open(args.zones, encoding="utf-8") as f:
-            zones = json.load(f)
-        kev = None
-        if args.kev:
-            with open(args.kev, encoding="utf-8") as f:
-                kev = json.load(f)
-        document = _document(graph, zones, kev)
-    except ValueError as exc:
+        document = _document(graph, args.zones, args.kev)
+    except (OSError, ValueError) as exc:
         print(f"exposure: {exc}", file=sys.stderr)
         return 1
 

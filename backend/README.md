@@ -58,6 +58,8 @@ Useful options:
 Run the standalone, files-only exposure evaluator from `backend/` with
 `python -m vulnmapper.exposure --graph PATH --zones PATH [--kev PATH] [--out PATH]`.
 Without `--out`, it writes `exposure.json` beside the graph.
+The exposure file is replaced only after a successful evaluation. Compare its
+`source_scan` with the graph's `metadata.scan_time` and treat a mismatch as stale.
 
 ## Output
 

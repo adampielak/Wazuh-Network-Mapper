@@ -86,12 +86,16 @@ class TestExposurePipeline(unittest.TestCase):
     def test_malformed_zones_fail_only_exposure_stage(self):
         with open(self.zones_path, "w", encoding="utf-8") as f:
             json.dump({"prefixes": {"invalid-prefix": "user"}}, f)
+        previous = b'{"source_scan":"previous-scan"}\n'
+        with open(self.exposure_path, "wb") as f:
+            f.write(previous)
         with self.assertLogs("vulnmapper.pipeline", "ERROR"):
             graph = self.scan("--zones", self.zones_path)
         self.assertEqual(self.stage(graph)["status"], "failed")
         self.assertIn({"type": "stage_failed", "stage": "Exposure", "error": "ValueError"},
                       graph["metadata"]["warnings"])
-        self.assertFalse(os.path.exists(self.exposure_path))
+        with open(self.exposure_path, "rb") as f:
+            self.assertEqual(f.read(), previous)
 
     def test_missing_zones_file_fails_only_exposure_stage(self):
         missing = os.path.join(self.tmp, "missing-zones.json")
@@ -131,6 +135,23 @@ class TestExposurePipeline(unittest.TestCase):
                                             "--out", output_path]), 1)
         self.assertEqual(len(stderr.getvalue().splitlines()), 1)
         self.assertTrue(stderr.getvalue().startswith("exposure:"))
+
+    def test_standalone_cli_missing_inputs_are_labelled_errors(self):
+        graph = {"nodes": [], "edges": [], "metadata": {"scan_time": "synthetic"}}
+        graph_path = os.path.join(self.tmp, "input.json")
+        with open(graph_path, "w", encoding="utf-8") as f:
+            json.dump(graph, f)
+        cases = [
+            ["--graph", os.path.join(self.tmp, "missing-graph.json"), "--zones", self.zones_path],
+            ["--graph", graph_path, "--zones", os.path.join(self.tmp, "missing-zones.json")],
+            ["--graph", graph_path, "--zones", self.zones_path, "--kev",
+             os.path.join(self.tmp, "missing-kev.json")],
+        ]
+        for argv in cases:
+            with self.subTest(argv=argv), contextlib.redirect_stderr(io.StringIO()) as stderr:
+                self.assertEqual(exposure_main(argv), 1)
+            self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+            self.assertTrue(stderr.getvalue().startswith("exposure:"))
 
 
 if __name__ == "__main__":

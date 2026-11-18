@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import copy
 import ipaddress
 import json
-import re
 from pathlib import Path
 from typing import Optional
 
 from ..attackpaths import AttackPathEngine
+from ..checklist.evaluate import port_key
 
 
 def _ref(source_id: str, title: str, date: str, verified: bool) -> dict:
@@ -46,7 +47,7 @@ CLASS_REGISTRY = {
         "attack": ["T1190"],
     },
     "E6": {
-        "id": "E6", "title": "VPN gateway with a KEV vulnerability", "use": "entry",
+        "id": "E6", "title": "VPN gateway with a KEV vulnerability", "use": "both",
         "source_refs": [_ref("FORTIGUARD-FG-IR-24-015", "FortiGuard FG-IR-24-015", "2024-02-09", True),
                         _ref("CVE-2024-3400", "CVE-2024-3400", "2024", True),
                         _ref("CISA-AA24-060A", "CISA AA24-060A", "2024-02-29", True)],
@@ -92,10 +93,11 @@ CLASS_REGISTRY = {
         "attack": ["T1190"],
     },
     "E14": {
-        "id": "E14", "title": "Central AAA missing or local fallback only", "use": "both",
+        "id": "E14", "title": "Central AAA missing or local fallback only", "use": "entry",
         "source_refs": [_ref("NSA-NISG-2022", "NSA Network Infrastructure Security Guide", "2022-06-15", False),
                         _ref("CISA-AA25-239A", "CISA AA25-239A", "2025-08-27", True)],
         "attack": ["T1556.004", "T1078.001"],
+        "persistence": True,
     },
     "E15": {
         "id": "E15", "title": "Unlisted tunnels or routing peers", "use": "pivot",
@@ -109,7 +111,7 @@ CLASS_REGISTRY = {
 CLASS_STATUS = {
     "E1": {"status": "IMPLEMENTED (observed)", "detail": "config_findings evidence for snmp-default-community"},
     "E2": {"status": "NOT OBSERVABLE", "detail": "management_service_reachability_by_zone and control-plane filter conditions; nmap F3.6 from a lower-trust proxy plus oxidized configuration conditions"},
-    "E3": {"status": "NOT OBSERVABLE", "detail": "management service listener/banner tied to a device and protocol; nmap F3.6 or oxidized configuration conditions"},
+    "E3": {"status": "IMPLEMENTED (observed)", "detail": "config_findings evidence for mgmt-telnet-enabled, mgmt-http-enabled, and snmp-no-auth"},
     "E4": {"status": "NOT OBSERVABLE", "detail": "tcp/4786 listener or no-vstack configuration condition; nmap F3.6 or oxidized configuration conditions"},
     "E5": {"status": "NOT OBSERVABLE", "detail": "tcp/80 or tcp/443 reachability by source zone and IOS XE access condition; nmap F3.6 plus oxidized configuration conditions"},
     "E6": {"status": "NOT OBSERVABLE", "detail": "VPN listener and affected product/version association; nmap F3.6 and F5.4 device-version matching"},
@@ -131,6 +133,11 @@ LIMITS = [
     "The default trust order ranks mgmt and oob equally highest; other zones require explicit trust_order values to compare.",
     "Unknown-zone E12 items are inferred candidates, not attack routes; weakness_present marks a separate emitted weakness on the same node.",
     "E10 uses graph absence of a neighbour or endpoint link as evidence; it does not prove an uncollected forwarding table was empty.",
+    "E10 checks learned MAC presence only through endpoint_link edges; the forwarding table itself is not read here.",
+    "Spare-port checklist evidence is capped at 20 listed ports per device, so E10 reports at most those listed ports.",
+    "E12 evaluates L3 presence only; L2-only membership awaits Q-BRIDGE F3.5a data.",
+    "Prefix-based presence uses the node management address.",
+    'ports[].oper "down" is the producer\'s collapsed state for ifOperStatus down(2), notPresent(6), or lowerLayerDown(7), not the raw enum.',
     "EPSS and firmware end-of-life status are not evaluated because those values are not available as explicit inputs to this function.",
 ]
 
@@ -146,11 +153,13 @@ def _read_json(value, label: str):
 
 def _vlan_key_text(key: tuple) -> str:
     site, component, vid = key
-    return f"{site or ''}|{component}|{vid}"
+    return json.dumps([site, component, vid])
 
 
 def _load_zones(zones):
     doc = _read_json(zones, "zones")
+    if not isinstance(doc, dict):
+        raise ValueError("zones file must contain a JSON object")
     vlan_map = doc.get("vlans") or {}
     prefix_map = doc.get("prefixes") or {}
     if not isinstance(vlan_map, dict) or not isinstance(prefix_map, dict):
@@ -166,7 +175,11 @@ def _load_zones(zones):
         raise ValueError("trust_order must map allowed zone names to numeric ranks")
     prefixes = []
     for prefix, zone in prefix_map.items():
-        prefixes.append((ipaddress.ip_network(prefix, strict=False), zone))
+        try:
+            network = ipaddress.ip_network(prefix, strict=False)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"zones prefixes entry {prefix!r} is invalid") from exc
+        prefixes.append((network, zone))
     prefixes.sort(key=lambda item: (-item[0].prefixlen, str(item[0])))
     return vlan_map, prefixes, trust
 
@@ -181,28 +194,24 @@ def _prefix_zone(ip: Optional[str], prefixes) -> Optional[str]:
     return next((zone for network, zone in prefixes if address.version == network.version and address in network), None)
 
 
-def _port_key(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", str(value).lower())
-
-
-def _port_has_graph_link(graph: dict, node_id: str, port_name: str) -> tuple[bool, bool]:
-    target = _port_key(port_name)
+def _port_has_graph_link(graph: dict, node_id: str, port_names: set) -> tuple[bool, bool]:
+    targets = {port_key(name) for name in port_names if name}
     neighbor = False
     endpoint = False
     for edge in graph.get("edges") or []:
         if edge.get("type") == "lldp":
             device_port = (edge.get("local_port") if edge.get("source") == node_id
                            else edge.get("remote_port") if edge.get("target") == node_id else None)
-            if device_port and _port_key(device_port) == target:
+            if device_port and port_key(device_port) in targets:
                 neighbor = True
         if edge.get("type") == "endpoint_link":
             device_port = edge.get("local_port")
             if node_id in (edge.get("source"), edge.get("target")) and device_port \
-                    and _port_key(device_port) == target:
+                    and port_key(device_port) in targets:
                 endpoint = True
     for node in graph.get("nodes") or []:
         if node.get("node_id") == node_id:
-            if any(_port_key(name) == target for name in node.get("neighbor_ports") or []):
+            if any(port_key(name) in targets for name in node.get("neighbor_ports") or []):
                 neighbor = True
     return neighbor, endpoint
 
@@ -222,8 +231,24 @@ def _findings(node: dict, finding_id: str) -> list:
             if finding.get("id") == finding_id]
 
 
+def _validate_graph(graph) -> None:
+    if not isinstance(graph, dict):
+        raise ValueError("graph must be a JSON object")
+    graph_nodes = graph.get("nodes")
+    if not isinstance(graph_nodes, list):
+        raise ValueError("graph nodes must be a JSON array")
+    for index, node in enumerate(graph_nodes):
+        if not isinstance(node, dict):
+            raise ValueError(f"graph nodes[{index}] must be a JSON object")
+        if not node.get("node_id"):
+            raise ValueError(f"graph nodes[{index}].node_id is required")
+        if not node.get("kind"):
+            raise ValueError(f"graph nodes[{index}].kind is required")
+
+
 def compute_exposure(graph: dict, zones, kev=None) -> dict:
     """Return deterministic exposure candidates from graph data and supplied JSON inputs."""
+    _validate_graph(graph)
     vlan_zones, prefixes, trust_order = _load_zones(zones)
     kev_ids = set()
     kev_rows = {}
@@ -237,10 +262,14 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
                 kev_ids.add(row["cveID"])
                 kev_rows[row["cveID"]] = row
 
-    nodes = {node["node_id"]: [] for node in graph.get("nodes") or []
-             if node.get("kind") == "device" and node.get("node_id")}
+    nodes = {node["node_id"]: [] for node in graph["nodes"] if node.get("kind") == "device"}
     gaps = set()
     engine = AttackPathEngine(graph, None, None)
+    for node_keys in engine.vlan_keys.values():
+        for key in node_keys:
+            key_text = _vlan_key_text(key)
+            if vlan_zones.get(key_text) is None:
+                gaps.add(f"vlan:{key_text}")
     node_by_id = {node["node_id"]: node for node in graph.get("nodes") or []
                   if node.get("node_id")}
     zone_presence = {}
@@ -251,24 +280,49 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
 
         snmp_findings = _findings(node, "snmp-default-community")
         for finding in snmp_findings:
-            items.append(_item("E1", {"config_findings.id": finding["id"],
-                                      "config_findings.evidence": finding.get("evidence")}))
+            finding_evidence = finding.get("evidence") or {}
+            communities = finding_evidence.get("communities")
+            items.append(_item("E1", {
+                "config_findings.id": finding["id"],
+                "community_count": len(communities) if isinstance(communities, list) else 0,
+                **({"found_by": finding_evidence["found_by"]}
+                   if finding_evidence.get("found_by") is not None else {}),
+            }))
+
+        for finding_id in ("mgmt-telnet-enabled", "mgmt-http-enabled", "snmp-no-auth"):
+            for finding in _findings(node, finding_id):
+                finding_evidence = finding.get("evidence") or {}
+                evidence = {"config_findings.id": finding_id}
+                for field in ("port", "found_by", "snmp_version"):
+                    if finding_evidence.get(field) is not None:
+                        evidence[field] = finding_evidence[field]
+                items.append(_item("E3", evidence))
 
         bpdu_findings = _findings(node, "bpdu-guard-missing")
         for finding in bpdu_findings:
-            items.append(_item("E9", {"config_findings.id": finding["id"],
-                                      "config_findings.evidence": finding.get("evidence")}))
+            finding_evidence = finding.get("evidence") or {}
+            items.append(_item("E9", {
+                "config_findings.id": finding["id"],
+                **({"ports": finding_evidence["ports"]}
+                   if finding_evidence.get("ports") is not None else {}),
+                **({"total": finding_evidence["total"]}
+                   if finding_evidence.get("total") is not None else {}),
+            }))
 
         for finding in _findings(node, "spare-ports-in-used-vlan"):
             for port in (finding.get("evidence") or {}).get("ports") or []:
                 name = port.get("port")
+                evidence_key = port_key(name or "")
                 matching = next((entry for entry in node.get("ports") or []
-                                 if _port_key(entry.get("name", "")) == _port_key(name or "")), None)
+                                 if evidence_key in {port_key(entry.get("name", "")),
+                                                     port_key(entry.get("alias", ""))}), None)
                 if not name or port.get("admin") != "up" or not matching \
-                        or matching.get("admin") != "up" or matching.get("oper") != "down":
+                        or matching.get("admin") != "up" or matching.get("oper") != "down" \
+                        or matching.get("state") == "link_lost":
                     continue
-                neighbor, endpoint_link = _port_has_graph_link(graph, node_id, name)
-                if neighbor or endpoint_link or matching.get("mac") or matching.get("macs"):
+                port_names = {matching.get("name"), matching.get("alias")} - {None, ""}
+                neighbor, endpoint_link = _port_has_graph_link(graph, node_id, port_names)
+                if neighbor or endpoint_link:
                     continue
                 items.append(_item("E10", {
                     "ports.name": name, "ports.admin": matching.get("admin"),
@@ -277,7 +331,6 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
                     "config_findings.evidence.vlan": port.get("vlan"),
                     "config_findings.evidence.admin": port.get("admin"),
                     "neighbor_link": False, "endpoint_link": False,
-                    "ports.mac": matching.get("mac"), "ports.macs": matching.get("macs"),
                     "config_findings.id": finding["id"],
                 }, confidence="inferred"))
 
@@ -369,7 +422,7 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
     limits = list(LIMITS)
     if kev is None:
         limits.append("KEV membership was not evaluated because no KEV JSON path or object was supplied.")
-    return {"nodes": nodes, "zone_gaps": sorted(gaps), "classes": CLASS_STATUS,
+    return {"nodes": nodes, "zone_gaps": sorted(gaps), "classes": copy.deepcopy(CLASS_STATUS),
             "limits": limits}
 
 

@@ -5,9 +5,10 @@ Decisions on review items, agreed with the team before they were changed.
 ## B6. Exposure evaluation uses explicit zone mappings
 
 Exposure evaluation consumes graph data and caller-supplied JSON only. VLAN zones
-come from `zones.vlans`, keyed as `<site>|<component>|<vid>` using the
-attack-path component identifier; `zones.prefixes` can classify a device's
-recorded IP address. Missing mappings become `unknown` and are listed in
+come from `zones.vlans`, keyed by the JSON string encoding of
+`[site, component, vid]` from the attack-path VLAN key; for example,
+`[null, "device:synthetic-core", 10]`. `zones.prefixes` can classify a device's
+recorded management IP address. Missing mappings become `unknown` and are listed in
 `zone_gaps`. Zone names are limited to `mgmt`, `oob`, `backbone`, `customer`,
 `user`, `dmz`, and `unknown`. `unknown` is never ranked. The default trust ranks
 set `mgmt` and `oob` equally highest; other zones are compared only when the
@@ -16,7 +17,7 @@ mapping file supplies numeric `trust_order` values. For example:
 ```json
 {
   "trust_order": {"mgmt": 100, "oob": 100, "backbone": 80, "user": 20},
-  "vlans": {"|device:synthetic-core|10": "mgmt"},
+  "vlans": {"[null, \"device:synthetic-core\", 10]": "mgmt"},
   "prefixes": {"192.0.2.0/24": "user"}
 }
 ```
@@ -32,6 +33,8 @@ confidence, widest known trust gap, then zone names. For multiple keys in one
 zone, an observed key takes precedence over inferred keys while all keys remain
 in evidence. `weakness_present` separately records whether another emitted
 exposure class exists on that node.
+The registry classifies E6 as both entry and pivot; E14 is an entry class and
+retains `persistence: true`.
 
 The current graph supports the following classes. Classes marked not observable
 do not emit items until their named source data is added:
@@ -40,16 +43,16 @@ do not emit items until their named source data is added:
 |---|---|---|
 | E1 | IMPLEMENTED (observed) | `config_findings` evidence for `snmp-default-community` |
 | E2 | NOT OBSERVABLE | `management_service_reachability_by_zone` and control-plane filter conditions; nmap F3.6 from a lower-trust proxy plus oxidized configuration conditions |
-| E3 | NOT OBSERVABLE | Device-bound management listener/banner or protocol configuration; nmap F3.6 or oxidized configuration conditions |
+| E3 | IMPLEMENTED (observed) | `config_findings` evidence for `mgmt-telnet-enabled`, `mgmt-http-enabled`, or `snmp-no-auth` |
 | E4 | NOT OBSERVABLE | tcp/4786 listener or `no vstack` configuration condition; nmap F3.6 or oxidized configuration conditions |
 | E5 | NOT OBSERVABLE | tcp/80 or tcp/443 reachability by source zone plus IOS XE access condition; nmap F3.6 and oxidized configuration conditions |
 | E6 | NOT OBSERVABLE | VPN listener and affected product/version association; nmap F3.6 and F5.4 version matching |
 | E7 | NOT OBSERVABLE | Edge/client-port classification and `lldpLocPortTable`; IP-MIB/NetBox zone assignment and crawl port-role data |
 | E8 | NOT OBSERVABLE | `dot1qPvid`, untagged egress membership, native VLAN, and trunk/DTP mode; Q-BRIDGE F3.5a and oxidized configuration conditions |
 | E9 | IMPLEMENTED (observed) | `config_findings` evidence for `bpdu-guard-missing`; source pending |
-| E10 | IMPLEMENTED (inferred) | Spare-port checklist finding plus `ports[].admin`, `ports[].oper`, `neighbor_ports`, and graph endpoint links. Empty forwarding data is not assumed. IF-MIB enum meanings follow RFC 2863. |
+| E10 | IMPLEMENTED (inferred) | Spare-port checklist finding plus `ports[].admin`, `ports[].oper`, `neighbor_ports`, and graph endpoint links. Checklist evidence lists at most 20 ports per device. Learned MAC absence is judged only from endpoint links; the forwarding table is not read. `ports[].oper: down` is the producer's collapsed state for ifOperStatus down(2), notPresent(6), or lowerLayerDown(7), not the raw enum. |
 | E11 | NOT OBSERVABLE | Per-interface management IP-to-VLAN association; IP-MIB and NetBox interface/VLAN mapping |
-| E12 | IMPLEMENTED (observed/inferred) | Attack-path L3 VLAN keys joined to explicit zone mappings; unknown-side candidates are inferred |
+| E12 | IMPLEMENTED (observed/inferred) | Attack-path L3 VLAN keys joined to explicit zone mappings; all qualifying pairs are listed. Unknown-side candidates are inferred. L2-only membership awaits Q-BRIDGE F3.5a. Prefix presence uses the management IP. |
 | E13 | IMPLEMENTED (observed) | `top_cves[].cve` joined only to the explicitly supplied CISA KEV JSON `vulnerabilities[].cveID`; EPSS and EoL/EoS are not evaluated |
 | E14 | NOT OBSERVABLE | Central AAA and local-fallback configuration conditions; oxidized `junos-config-conditions` and vendor configuration checks |
 | E15 | NOT OBSERVABLE | BGP peer state and tunnel interface/mode; BGP4-MIB and oxidized configuration conditions |

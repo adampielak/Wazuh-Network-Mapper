@@ -34,6 +34,10 @@ def graph(nodes, edges=None):
     return {"nodes": nodes, "edges": edges or [], "metadata": {}}
 
 
+def vlan_key(site, component, vid):
+    return json.dumps([site, component, vid])
+
+
 def routed_graph():
     router = device("device:synthetic-router", "router", {
         "Gi0/0.10": "up", "Gi0/1.20": "up",
@@ -96,8 +100,8 @@ class TestExposure(unittest.TestCase):
         zones = {
             "trust_order": {"mgmt": 100, "user": 20},
             "vlans": {
-                "synthetic-site|device:synthetic-a|10": "mgmt",
-                "synthetic-site|device:synthetic-b|20": "user",
+                vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt",
+                vlan_key("synthetic-site", "device:synthetic-b", 20): "user",
             },
         }
         result = compute_exposure(routed_graph(), zones)
@@ -108,9 +112,9 @@ class TestExposure(unittest.TestCase):
 
     def test_observed_widest_pair_precedes_inferred_unknown_pairs(self):
         zones = {"trust_order": {"mgmt": 100, "customer": 40, "user": 20}, "vlans": {
-            "synthetic-site|device:synthetic-a|10": "mgmt",
-            "synthetic-site|device:synthetic-b|20": "user",
-            "synthetic-site|device:synthetic-c|30": "customer",
+            vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt",
+            vlan_key("synthetic-site", "device:synthetic-b", 20): "user",
+            vlan_key("synthetic-site", "device:synthetic-c", 30): "customer",
         }}
         result = compute_exposure(routed_four_zones_graph(), zones)
         pivot = next(item for item in result["nodes"]["device:synthetic-router"]
@@ -131,9 +135,9 @@ class TestExposure(unittest.TestCase):
 
     def test_same_zone_presence_prefers_observed_key_and_keeps_all_keys(self):
         zones = {"trust_order": {"mgmt": 100, "user": 20}, "vlans": {
-            "synthetic-site|device:synthetic-a|10": "mgmt",
-            "synthetic-site|device:synthetic-b|20": "mgmt",
-            "synthetic-site|device:synthetic-c|30": "user",
+            vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt",
+            vlan_key("synthetic-site", "device:synthetic-b", 20): "mgmt",
+            vlan_key("synthetic-site", "device:synthetic-c", 30): "user",
         }}
         result = compute_exposure(routed_same_zone_graph(), zones)
         pivot = next(item for item in result["nodes"]["device:synthetic-router"]
@@ -146,7 +150,7 @@ class TestExposure(unittest.TestCase):
 
     def test_unknown_zone_side_produces_inferred_pivot(self):
         zones = {"trust_order": {"mgmt": 100, "user": 20}, "vlans": {
-            "synthetic-site|device:synthetic-a|10": "mgmt",
+            vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt",
         }}
         result = compute_exposure(routed_graph(), zones)
         pivot = next(item for item in result["nodes"]["device:synthetic-router"]
@@ -166,6 +170,170 @@ class TestExposure(unittest.TestCase):
         self.assertEqual(item["evidence"]["ports.admin"], "up")
         self.assertEqual(item["evidence"]["ports.oper"], "down")
         self.assertTrue(item["source_pending"])
+
+    def test_e10_uses_shared_port_key_for_neighbor_names(self):
+        node = device("device:synthetic-switch", ports=[
+            {"name": "GigabitEthernet1/0/7", "admin": "up", "oper": "down"},
+        ], neighbor_ports=["Gi1/0/7"], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "GigabitEthernet1/0/7", "vlan": 10, "admin": "up"}],
+            },
+        }])
+        result = compute_exposure(graph([node]), {})
+        self.assertFalse(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
+    def test_e10_matches_neighbor_through_port_alias(self):
+        node = device("device:synthetic-switch", ports=[
+            {"name": "Ethernet1/0/7", "alias": "Gi1/0/7", "admin": "up", "oper": "down"},
+        ], neighbor_ports=["Gi1/0/7"], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "Ethernet1/0/7", "vlan": 10, "admin": "up"}],
+            },
+        }])
+        result = compute_exposure(graph([node]), {})
+        self.assertFalse(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
+    def test_e10_distinguishes_dot_subinterface_from_slash_port(self):
+        node = device("device:synthetic-router", "router", {"Gi0/0.100": "up"}, ports=[
+            {"name": "Gi0/0.100", "admin": "up", "oper": "down"},
+        ], neighbor_ports=["Gi0/0/100"], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "Gi0/0.100", "vlan": 100, "admin": "up"}],
+            },
+        }])
+        result = compute_exposure(graph([node]), {})
+        self.assertTrue(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
+    def test_e10_excludes_link_lost_port(self):
+        node = device("device:synthetic-switch", ports=[
+            {"name": "Gi1/0/7", "admin": "up", "oper": "down", "state": "link_lost"},
+        ], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "Gi1/0/7", "vlan": 10, "admin": "up"}],
+            },
+        }])
+        result = compute_exposure(graph([node]), {})
+        self.assertFalse(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
+    def test_e10_neighbor_edges_use_shared_port_key(self):
+        node = device("device:synthetic-switch", ports=[
+            {"name": "GigabitEthernet1/0/7", "admin": "up", "oper": "down"},
+        ], config_findings=[{
+            "id": "spare-ports-in-used-vlan", "evidence": {
+                "ports": [{"port": "GigabitEthernet1/0/7", "vlan": 10, "admin": "up"}],
+            },
+        }])
+        peer = device("device:synthetic-peer")
+        edge = {"source": node["node_id"], "target": peer["node_id"], "type": "lldp",
+                "local_port": "Gi1/0/7", "remote_port": "Gi1/0/1"}
+        result = compute_exposure(graph([node, peer], [edge]), {})
+        self.assertFalse(any(item["class"] == "E10" for item in result["nodes"][node["node_id"]]))
+
+    def test_e3_emits_safe_evidence_for_each_checklist_finding(self):
+        cases = {
+            "mgmt-telnet-enabled": {"port": 23, "found_by": "synthetic check"},
+            "mgmt-http-enabled": {"port": 80},
+            "snmp-no-auth": {"snmp_version": "v2c"},
+        }
+        for finding_id, finding_evidence in cases.items():
+            with self.subTest(finding_id=finding_id):
+                node = device("device:synthetic-cleartext", config_findings=[{
+                    "id": finding_id, "evidence": finding_evidence,
+                }])
+                result = compute_exposure(graph([node]), {})
+                item = next(item for item in result["nodes"][node["node_id"]]
+                            if item["class"] == "E3")
+                self.assertEqual(item["evidence"]["config_findings.id"], finding_id)
+                self.assertFalse(item["source_pending"])
+
+    def test_e1_never_returns_community_values(self):
+        node = device("device:synthetic-secret", config_findings=[{
+            "id": "snmp-default-community",
+            "evidence": {"communities": ["synthetic-community"], "found_by": "synthetic probe"},
+        }])
+        result = compute_exposure(graph([node]), {})
+        encoded = json.dumps(result)
+        item = next(item for item in result["nodes"][node["node_id"]]
+                    if item["class"] == "E1")
+        self.assertNotIn("synthetic-community", encoded)
+        self.assertEqual(item["evidence"]["community_count"], 1)
+        self.assertEqual(item["evidence"]["found_by"], "synthetic probe")
+
+    def test_zone_gaps_include_endpoint_vlan_keys(self):
+        switch = device("device:synthetic-switch", "l3-switch", {"Vlan10": "up"})
+        endpoint = {"node_id": "endpoint:synthetic-agent", "kind": "endpoint",
+                    "site": "synthetic-site", "vlan": 30}
+        edge = {"source": endpoint["node_id"], "target": switch["node_id"],
+                "type": "endpoint_link", "local_port": "Gi1/0/1"}
+        result = compute_exposure(graph([switch, endpoint], [edge]), {})
+        self.assertIn(f"vlan:{vlan_key('synthetic-site', switch['node_id'], 10)}", result["zone_gaps"])
+        self.assertIn(f"vlan:{vlan_key('synthetic-site', switch['node_id'], 30)}", result["zone_gaps"])
+
+    def test_malformed_graph_and_zone_inputs_raise_labeled_value_errors(self):
+        cases = [
+            ({}, "graph nodes"),
+            ({"nodes": [{"kind": "device"}]}, r"nodes\[0\]\.node_id"),
+            ({"nodes": [{"node_id": "device:synthetic",}]}, r"nodes\[0\]\.kind"),
+        ]
+        for graph_doc, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    compute_exposure(graph_doc, {})
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, "zones.json")
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump([], handle)
+            with self.assertRaisesRegex(ValueError, "zones file"):
+                compute_exposure(graph([]), path)
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump({"prefixes": {"not-a-prefix": "user"}}, handle)
+            with self.assertRaisesRegex(ValueError, "zones prefixes entry"):
+                compute_exposure(graph([]), path)
+
+    def test_ipv4_and_ipv6_prefix_presence_can_form_e12_pairs(self):
+        graph_v4 = routed_graph()
+        zones_v4 = {"trust_order": {"mgmt": 100, "user": 20},
+                    "vlans": {vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt"},
+                    "prefixes": {"192.0.2.0/24": "user"}}
+        v4 = compute_exposure(graph_v4, zones_v4)
+        pair_keys = [key for pair in next(item for item in v4["nodes"]["device:synthetic-router"]
+                                          if item["class"] == "E12")["evidence"]["pairs"]
+                     for side in ("presence_a", "presence_b")
+                     for key in pair[side]["keys"]]
+        self.assertIn("prefix:192.0.2.10", [row["key"] for row in pair_keys])
+
+        graph_v6 = routed_graph()
+        graph_v6["nodes"][0]["ip"] = "2001:db8::10"
+        zones_v6 = {"trust_order": {"mgmt": 100, "customer": 40},
+                    "vlans": {vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt"},
+                    "prefixes": {"2001:db8::/32": "customer"}}
+        v6 = compute_exposure(graph_v6, zones_v6)
+        ipv6_pivot = next(item for item in v6["nodes"]["device:synthetic-router"]
+                          if item["class"] == "E12")
+        self.assertTrue(any(row["key"] == "prefix:2001:db8::10"
+                            for pair in ipv6_pivot["evidence"]["pairs"]
+                            for side in ("presence_a", "presence_b")
+                            for row in pair[side]["keys"]))
+
+    def test_vlan_key_encoding_distinguishes_null_and_empty_site(self):
+        self.assertNotEqual(vlan_key(None, "device:synthetic", 10),
+                            vlan_key("", "device:synthetic", 10))
+
+    def test_registry_metadata_and_status_result_are_copied(self):
+        self.assertEqual(CLASS_REGISTRY["E6"]["use"], "both")
+        self.assertEqual(CLASS_REGISTRY["E14"]["use"], "entry")
+        self.assertIs(CLASS_REGISTRY["E14"]["persistence"], True)
+        result = compute_exposure(graph([]), {})
+        result["classes"]["E1"]["status"] = "changed"
+        self.assertEqual(CLASS_STATUS["E1"]["status"], "IMPLEMENTED (observed)")
+
+    def test_limits_describe_collection_bounds(self):
+        limits = compute_exposure(graph([]), {})["limits"]
+        self.assertTrue(any("at most those listed ports" in line for line in limits))
+        self.assertTrue(any("L2-only membership" in line for line in limits))
+        self.assertTrue(any("management address" in line for line in limits))
+        self.assertTrue(any("notPresent(6)" in line and "lowerLayerDown(7)" in line
+                            for line in limits))
 
     def test_bpdu_guard_finding_has_pending_source(self):
         node = device("device:synthetic-bpdu", config_findings=[
@@ -220,15 +388,14 @@ class TestExposure(unittest.TestCase):
                 {"id": "bpdu-guard-missing", "title": "Synthetic finding", "evidence": {}},
                 {"id": "spare-ports-in-used-vlan", "title": "Synthetic finding", "evidence": {"ports": []}},
             ],
-            "ports": [{"name": "Gi1/0/7", "admin": "up", "oper": "down",
-                       "mac": None, "macs": []}],
+            "ports": [{"name": "Gi1/0/7", "admin": "up", "oper": "down"}],
             "top_cves": [{"cve": SYNTHETIC_CVE}],
             "bgp_peers": [],
             "hostname": "switch.example",
         })
         mapping = {"trust_order": {"mgmt": 100, "user": 20}, "vlans": {
-            "synthetic-site|device:synthetic-a|10": "mgmt",
-            "synthetic-site|device:synthetic-b|20": "user",
+            vlan_key("synthetic-site", "device:synthetic-a", 10): "mgmt",
+            vlan_key("synthetic-site", "device:synthetic-b", 20): "user",
         }}
         result = compute_exposure(graph_doc, mapping, KEV)
         emitted = {item["class"] for rows in result["nodes"].values() for item in rows}

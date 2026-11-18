@@ -54,20 +54,20 @@ CLASS_REGISTRY = {
     },
     "E7": {
         "id": "E7", "title": "LLDP or CDP enabled at a client or edge port", "use": "pivot",
-        "source_refs": [_ref("IEEE-802.1AB-2016", "IEEE 802.1AB-2016", "2016", True),
+        "source_refs": [_ref("IEEE-802.1AB-2016", "IEEE 802.1AB-2016", "2016", False),
                         _ref("NSA-NISG-2022", "NSA Network Infrastructure Security Guide", "2022-06-15", False)],
         "attack": ["T1590"],
     },
     "E8": {
         "id": "E8", "title": "VLAN hopping conditions", "use": "pivot",
-        "source_refs": [_ref("CISCO-C9300-17.9-SECURITY", "Cisco Catalyst 9300 17.9 Security Configuration Guide", "17.9", True),
+        "source_refs": [_ref("CISCO-C9300-17.9-SECURITY", "Cisco Catalyst 9300 17.9 Security Configuration Guide", "17.9", False),
                         _ref("NSA-NISG-2022", "NSA Network Infrastructure Security Guide", "2022-06-15", False),
-                        _ref("IEEE-802.1Q-2018", "IEEE 802.1Q-2018", "2018", True)],
+                        _ref("IEEE-802.1Q-2018", "IEEE 802.1Q-2018", "2018", False)],
         "attack": [],
     },
     "E9": {
         "id": "E9", "title": "BPDU Guard missing on edge ports", "use": "pivot",
-        "source_refs": [_ref("IEEE-802.1D-2004", "IEEE 802.1D-2004", "2004", True),
+        "source_refs": [_ref("IEEE-802.1D-2004", "IEEE 802.1D-2004", "2004", False),
                         _ref("NSA-NISG-2022", "NSA Network Infrastructure Security Guide", "2022-06-15", False)],
         "attack": ["T1557"],
     },
@@ -115,10 +115,10 @@ CLASS_STATUS = {
     "E6": {"status": "NOT OBSERVABLE", "detail": "VPN listener and affected product/version association; nmap F3.6 and F5.4 device-version matching"},
     "E7": {"status": "NOT OBSERVABLE", "detail": "edge/client-port classification and lldpLocPortTable state; IP-MIB/NetBox zone assignment and crawl port-role data"},
     "E8": {"status": "NOT OBSERVABLE", "detail": "dot1qPvid, untagged egress membership, native VLAN and port trunk/DTP mode; Q-BRIDGE F3.5a and oxidized configuration conditions"},
-    "E9": {"status": "IMPLEMENTED (observed)", "detail": "config_findings evidence for bpdu-guard-missing"},
+    "E9": {"status": "IMPLEMENTED (observed)", "detail": "config_findings evidence for bpdu-guard-missing; source pending"},
     "E10": {"status": "IMPLEMENTED (inferred)", "detail": "spare-port checklist evidence plus IF-MIB port state and absence of a graph neighbour or endpoint link"},
     "E11": {"status": "NOT OBSERVABLE", "detail": "per-interface management IP-to-VLAN association; IP-MIB and NetBox interface/VLAN mapping"},
-    "E12": {"status": "IMPLEMENTED (observed/inferred)", "detail": "attackpaths L3 VLAN keys joined to explicit zone mappings; unknown-side candidates are inferred"},
+    "E12": {"status": "IMPLEMENTED (observed/inferred)", "detail": "attackpaths L3 VLAN keys joined to explicit zone mappings; all qualifying zone pairs are reported and unknown-side candidates are inferred"},
     "E13": {"status": "IMPLEMENTED (observed)", "detail": "top_cves CVE IDs joined to the explicitly supplied CISA KEV JSON"},
     "E14": {"status": "NOT OBSERVABLE", "detail": "central AAA and local-fallback configuration conditions; oxidized junos-config-conditions and vendor configuration checks"},
     "E15": {"status": "NOT OBSERVABLE", "detail": "BGP peer state and tunnel interface/mode configuration; BGP4-MIB and oxidized configuration conditions"},
@@ -312,8 +312,15 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
             zone_rows.append({"key": f"prefix:{node['ip']}", "zone": ip_zone, "confidence": "observed"})
 
         unique = {}
-        for presence in zone_rows:
-            unique.setdefault(presence["zone"], presence)
+        for zone in sorted({row["zone"] for row in zone_rows}):
+            zone_keys = sorted((row for row in zone_rows if row["zone"] == zone),
+                               key=lambda row: row["key"])
+            unique[zone] = {
+                "zone": zone,
+                "confidence": ("observed" if any(row["confidence"] == "observed"
+                                                   for row in zone_keys) else "inferred"),
+                "keys": zone_keys,
+            }
         zone_presence[node_id] = [unique[zone] for zone in sorted(unique)]
 
     for node_id in sorted(nodes):
@@ -324,22 +331,37 @@ def compute_exposure(graph: dict, zones, kev=None) -> dict:
                 if left["zone"] == right["zone"]:
                     continue
                 if "unknown" in (left["zone"], right["zone"]):
-                    pairs.append((left, right, "inferred"))
-                    continue
-                left_rank, right_rank = trust_order.get(left["zone"]), trust_order.get(right["zone"])
-                if left_rank is not None and right_rank is not None and left_rank != right_rank:
+                    confidence = "inferred"
+                    trust_gap = None
+                else:
+                    left_rank, right_rank = trust_order.get(left["zone"]), trust_order.get(right["zone"])
+                    if left_rank is None or right_rank is None or left_rank == right_rank:
+                        continue
                     confidence = "observed" if left["confidence"] == right["confidence"] == "observed" else "inferred"
-                    pairs.append((left, right, confidence))
+                    trust_gap = abs(left_rank - right_rank)
+                pairs.append({
+                    "zone_a": left["zone"], "zone_b": right["zone"],
+                    "presence_a": left, "presence_b": right,
+                    "confidence": confidence, "trust_gap": trust_gap,
+                })
         if not pairs:
             continue
-        left, right, confidence = sorted(pairs, key=lambda pair: (pair[0]["zone"], pair[1]["zone"], pair[2]))[0]
+        pairs.sort(key=lambda pair: (
+            0 if pair["confidence"] == "observed" else 1,
+            -(pair["trust_gap"] if pair["trust_gap"] is not None else -1),
+            pair["zone_a"], pair["zone_b"],
+        ))
+        best = pairs[0]
+        pair_evidence = [{key: value for key, value in pair.items()}
+                         for pair in pairs]
         weakness_present = any(item["class"] != "E12" for item in nodes[node_id])
         nodes[node_id].append(_item("E12", {
-            "presence_a": left, "presence_b": right,
-            "trust_order": {left["zone"]: trust_order.get(left["zone"]),
-                            right["zone"]: trust_order.get(right["zone"])},
+            "presence_a": best["presence_a"], "presence_b": best["presence_b"],
+            "trust_order": {best["zone_a"]: trust_order.get(best["zone_a"]),
+                            best["zone_b"]: trust_order.get(best["zone_b"])},
+            "pairs": pair_evidence,
             "weakness_present": weakness_present,
-        }, confidence=confidence, weakness_present=weakness_present))
+        }, confidence=best["confidence"], weakness_present=weakness_present))
 
     for node_id in nodes:
         nodes[node_id].sort(key=lambda item: (item["class"], json.dumps(item["evidence"], sort_keys=True)))

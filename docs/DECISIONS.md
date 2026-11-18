@@ -22,11 +22,16 @@ mapping file supplies numeric `trust_order` values. For example:
 ```
 
 The class registry is data with source title, date, and verification state.
-Sources shown as 403 in F5A remain unverified. An item is marked
-`source_pending` when all its references are unverified. E12 reports a
-two-zone device as a pivot candidate, not an attack route; an unknown side
-always makes its confidence inferred. `weakness_present` separately records
-whether another emitted exposure class exists on that node.
+`verified: true` means the lead fetched and read that source and received HTTP
+200. A cited source that was not read, including sources shown as 403 in F5A,
+is unverified. An item is marked `source_pending` when all its references are
+unverified; E9 therefore emits `source_pending: true`. E12 reports a two-zone
+device as a pivot candidate, not an attack route; an unknown side always makes
+its confidence inferred. It lists every qualifying pair, ordered by observed
+confidence, widest known trust gap, then zone names. For multiple keys in one
+zone, an observed key takes precedence over inferred keys while all keys remain
+in evidence. `weakness_present` separately records whether another emitted
+exposure class exists on that node.
 
 The current graph supports the following classes. Classes marked not observable
 do not emit items until their named source data is added:
@@ -41,7 +46,7 @@ do not emit items until their named source data is added:
 | E6 | NOT OBSERVABLE | VPN listener and affected product/version association; nmap F3.6 and F5.4 version matching |
 | E7 | NOT OBSERVABLE | Edge/client-port classification and `lldpLocPortTable`; IP-MIB/NetBox zone assignment and crawl port-role data |
 | E8 | NOT OBSERVABLE | `dot1qPvid`, untagged egress membership, native VLAN, and trunk/DTP mode; Q-BRIDGE F3.5a and oxidized configuration conditions |
-| E9 | IMPLEMENTED (observed) | `config_findings` evidence for `bpdu-guard-missing` |
+| E9 | IMPLEMENTED (observed) | `config_findings` evidence for `bpdu-guard-missing`; source pending |
 | E10 | IMPLEMENTED (inferred) | Spare-port checklist finding plus `ports[].admin`, `ports[].oper`, `neighbor_ports`, and graph endpoint links. Empty forwarding data is not assumed. IF-MIB enum meanings follow RFC 2863. |
 | E11 | NOT OBSERVABLE | Per-interface management IP-to-VLAN association; IP-MIB and NetBox interface/VLAN mapping |
 | E12 | IMPLEMENTED (observed/inferred) | Attack-path L3 VLAN keys joined to explicit zone mappings; unknown-side candidates are inferred |

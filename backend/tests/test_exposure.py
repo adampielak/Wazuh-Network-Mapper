@@ -49,6 +49,35 @@ def routed_graph():
     return graph([router, left, right], edges)
 
 
+def routed_four_zones_graph():
+    router = device("device:synthetic-router", "router", {
+        "Gi0/0.10": "up", "Gi0/1.20": "up", "Gi0/2.30": "up", "Gi0/3.40": "up",
+    })
+    sides = [device(f"device:synthetic-{name}", "l3-switch", {f"Vlan{vid}": "up"})
+             for name, vid in (("a", 10), ("b", 20), ("c", 30), ("d", 40))]
+    edges = [{"source": router["node_id"], "target": side["node_id"], "type": "lldp",
+              "local_port": f"Gi0/{index}", "remote_port": "Gi1/0"}
+             for index, side in enumerate(sides)]
+    return graph([router, *sides], edges)
+
+
+def routed_same_zone_graph():
+    router = device("device:synthetic-router", "router", {
+        "Gi0/0.10": "up", "Gi0/1.20": "up", "Gi0/2.30": "up",
+    })
+    sides = [device(f"device:synthetic-{name}", "l3-switch", {f"Vlan{vid}": "up"})
+             for name, vid in (("a", 10), ("b", 20), ("c", 30))]
+    edges = [
+        {"source": router["node_id"], "target": sides[0]["node_id"], "type": "lldp",
+         "local_port": "UnknownPort0", "remote_port": "Gi1/0"},
+        {"source": router["node_id"], "target": sides[1]["node_id"], "type": "lldp",
+         "local_port": "Gi0/1", "remote_port": "Gi1/0"},
+        {"source": router["node_id"], "target": sides[2]["node_id"], "type": "lldp",
+         "local_port": "Gi0/2", "remote_port": "Gi1/0"},
+    ]
+    return graph([router, *sides], edges)
+
+
 def zone_file(doc):
     handle = tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".json", delete=False)
     json.dump(doc, handle)
@@ -77,6 +106,44 @@ class TestExposure(unittest.TestCase):
         self.assertEqual(pivot["confidence"], "observed")
         self.assertFalse(pivot["weakness_present"])
 
+    def test_observed_widest_pair_precedes_inferred_unknown_pairs(self):
+        zones = {"trust_order": {"mgmt": 100, "customer": 40, "user": 20}, "vlans": {
+            "synthetic-site|device:synthetic-a|10": "mgmt",
+            "synthetic-site|device:synthetic-b|20": "user",
+            "synthetic-site|device:synthetic-c|30": "customer",
+        }}
+        result = compute_exposure(routed_four_zones_graph(), zones)
+        pivot = next(item for item in result["nodes"]["device:synthetic-router"]
+                     if item["class"] == "E12")
+        self.assertEqual(pivot["confidence"], "observed")
+        self.assertEqual((pivot["evidence"]["presence_a"]["zone"],
+                          pivot["evidence"]["presence_b"]["zone"]), ("mgmt", "user"))
+        pairs = pivot["evidence"]["pairs"]
+        self.assertEqual([(pair["zone_a"], pair["zone_b"], pair["confidence"])
+                          for pair in pairs], [
+            ("mgmt", "user", "observed"),
+            ("customer", "mgmt", "observed"),
+            ("customer", "user", "observed"),
+            ("customer", "unknown", "inferred"),
+            ("mgmt", "unknown", "inferred"),
+            ("unknown", "user", "inferred"),
+        ])
+
+    def test_same_zone_presence_prefers_observed_key_and_keeps_all_keys(self):
+        zones = {"trust_order": {"mgmt": 100, "user": 20}, "vlans": {
+            "synthetic-site|device:synthetic-a|10": "mgmt",
+            "synthetic-site|device:synthetic-b|20": "mgmt",
+            "synthetic-site|device:synthetic-c|30": "user",
+        }}
+        result = compute_exposure(routed_same_zone_graph(), zones)
+        pivot = next(item for item in result["nodes"]["device:synthetic-router"]
+                     if item["class"] == "E12")
+        mgmt = pivot["evidence"]["presence_a"]
+        self.assertEqual(mgmt["zone"], "mgmt")
+        self.assertEqual(mgmt["confidence"], "observed")
+        self.assertEqual([row["confidence"] for row in mgmt["keys"]], ["inferred", "observed"])
+        self.assertEqual(len(mgmt["keys"]), 2)
+
     def test_unknown_zone_side_produces_inferred_pivot(self):
         zones = {"trust_order": {"mgmt": 100, "user": 20}, "vlans": {
             "synthetic-site|device:synthetic-a|10": "mgmt",
@@ -98,6 +165,15 @@ class TestExposure(unittest.TestCase):
         self.assertEqual(item["confidence"], "inferred")
         self.assertEqual(item["evidence"]["ports.admin"], "up")
         self.assertEqual(item["evidence"]["ports.oper"], "down")
+        self.assertTrue(item["source_pending"])
+
+    def test_bpdu_guard_finding_has_pending_source(self):
+        node = device("device:synthetic-bpdu", config_findings=[
+            {"id": "bpdu-guard-missing", "title": "Synthetic finding", "evidence": {"ports": ["Gi1/0/1"]}},
+        ])
+        result = compute_exposure(graph([node]), {})
+        item = next(item for item in result["nodes"][node["node_id"]]
+                    if item["class"] == "E9")
         self.assertTrue(item["source_pending"])
 
     def test_admin_down_port_does_not_emit(self):

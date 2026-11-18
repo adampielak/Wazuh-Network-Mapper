@@ -17,13 +17,23 @@ This VLAN context is represented by [RFC 4363, Q-BRIDGE-MIB](https://www.rfc-edi
 
 A router's VLAN key uses the neighbor's component and site. A sub-interface VID
 is assigned to that side as observed only when its base interface matches the
-router-side port on an LLDP or endpoint edge. For an SVI-style interface or an
-edge without a router-side port, a VID observed in the neighbor component is
-assigned as inferred. Inferred sides are labelled on transit steps and counted
-in metadata. A side with a known sub-interface port that does not match the
-edge is excluded. When no neighbor side is available, the router's own site
+router-side port on an LLDP or endpoint edge. If the edge port matches a
+sub-interface base, only a matching `<base>.<vid>` is assigned; a different VID
+on that port is excluded. If no sub-interface base matches the edge port, the
+names are not comparable and a VID observed in the neighbor component is
+assigned as inferred. SVI-style interfaces and edges without a router-side port
+also use inferred sides. Inferred sides are labelled on transit steps and
+counted in metadata. When no neighbor side is available, the router's own site
 and component are used. Existing output `vlans` remains a list of integer VIDs;
 `vlan_keys` also exposes the scoped identity.
+
+The same VID on both router sides is valid transit when observed sub-interface
+evidence identifies a routed sub-interface on each side. For SVI/IRB VLANs,
+the side remains inferred because the graph has no per-port VLAN membership;
+[IEEE 802.1Q](https://standards.ieee.org/ieee/802.1q/10323/) and [RFC 4363,
+`dot1qVlanCurrentEgressPorts`](https://www.rfc-editor.org/rfc/rfc4363) describe
+the evidence that would identify those ports. Such routes carry
+`router_side: "inferred"` and are counted, never hidden or marked observed.
 
 An explicitly classified CVE row may set `requires_peer` to a protocol such as
 `bgp`. The CVE lookup/catalogue can supply this field; the attack-path engine

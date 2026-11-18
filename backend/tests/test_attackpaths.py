@@ -304,8 +304,8 @@ class TestReachability(unittest.TestCase):
                              "target", 16)
         access_a = self._access_switch("device:access-a")
         access_b = self._access_switch("device:access-b")
-        router = dev("device:router", "router", [116])
-        router["port_status"] = {"ge-0/0/1.116": "up"}
+        router = dev("device:router", "router", [116, 117])
+        router["port_status"] = {"ge-0/0/1.116": "up", "ge-0/0/2.117": "up"}
         edges = [{"source": source["node_id"], "target": access_a["node_id"],
                   "type": "endpoint_link"},
                  {"source": target["node_id"], "target": access_b["node_id"],
@@ -318,15 +318,17 @@ class TestReachability(unittest.TestCase):
                   {"endpoint:target": {"importance": "high"}}, edges=edges)
         self.assertEqual(doc["targets"][0]["routes"], [])
 
-    def test_physical_subinterface_sides_are_observed(self):
-        source = self._stamp(host("endpoint:source", 10, cves=[cve("C", 9.0)],
+    def test_same_vid_on_two_physical_subinterfaces_is_observed_transit(self):
+        source = self._stamp(host("endpoint:source", 116, cves=[cve("C", 9.0)],
                                   agent="001"), "source", 25)
-        target = self._stamp(host("endpoint:target", 20, cves=[cve("C", 8.0)], risk=5.0),
+        target = self._stamp(host("endpoint:target", 116, cves=[cve("C", 8.0)], risk=5.0),
                              "target", 26)
-        access_a = self._access_switch("device:access-a", 10)
-        access_b = self._access_switch("device:access-b", 20)
-        router = dev("device:router", "router", [10, 20])
-        router["port_status"] = {"ge-0/0/1.10": "up", "ge-0/0/2.20": "up"}
+        source["site"] = "site-a"
+        target["site"] = "site-b"
+        access_a = self._access_switch("device:access-a", 116, "site-a")
+        access_b = self._access_switch("device:access-b", 116, "site-b")
+        router = dev("device:router", "router", [116])
+        router["port_status"] = {"ge-0/0/1.116": "up", "ge-0/0/2.116": "up"}
         edges = [{"source": source["node_id"], "target": access_a["node_id"],
                   "type": "endpoint_link"},
                  {"source": target["node_id"], "target": access_b["node_id"],
@@ -337,23 +339,56 @@ class TestReachability(unittest.TestCase):
                   "local_port": "ge-0/0/2", "type": "lldp"}]
         doc = run([source, target, access_a, access_b, router],
                   {"endpoint:target": {"importance": "high"}}, edges=edges)
-        self.assertEqual(doc["targets"][0]["routes"][0]["steps"][0]["router_side"],
-                         "observed")
+        route = doc["targets"][0]["routes"][0]
+        self.assertTrue(route["crosses_router"])
+        self.assertEqual(route["steps"][0]["router_side"], "observed")
+
+    def test_noncomparable_router_port_name_infers_vlan_side(self):
+        source = self._stamp(host("endpoint:source", 116, cves=[cve("C", 9.0)],
+                                  agent="001"), "source", 27)
+        target = self._stamp(host("endpoint:target", 116, cves=[cve("C", 8.0)], risk=5.0),
+                             "target", 28)
+        source["site"] = "site-a"
+        target["site"] = "site-b"
+        access_a = self._access_switch("device:access-a", 116, "site-a")
+        access_b = self._access_switch("device:access-b", 116, "site-b")
+        router = dev("device:router", "router", [116])
+        router["port_status"] = {"Gi0/1.116": "up"}
+        edges = [{"source": source["node_id"], "target": access_a["node_id"],
+                  "type": "endpoint_link"},
+                 {"source": target["node_id"], "target": access_b["node_id"],
+                  "type": "endpoint_link"},
+                 {"source": router["node_id"], "target": access_a["node_id"],
+                  "local_port": "GigabitEthernet0/1", "type": "lldp"},
+                 {"source": router["node_id"], "target": access_b["node_id"],
+                  "local_port": "Gi0/1", "type": "lldp"}]
+        doc = run([source, target, access_a, access_b, router],
+                  {"endpoint:target": {"importance": "high"}}, edges=edges)
+        route = doc["targets"][0]["routes"][0]
+        self.assertTrue(route["crosses_router"])
+        self.assertEqual(route["steps"][0]["router_side"], "inferred")
 
     def test_svi_router_side_is_inferred_and_counted(self):
         source = self._stamp(host("endpoint:source", 116, cves=[cve("C", 9.0)],
                                   agent="001"), "source", 17)
         target = self._stamp(host("endpoint:target", 116, cves=[cve("C", 8.0)], risk=5.0),
                              "target", 18)
+        source["site"] = "site-a"
+        target["site"] = "site-b"
         access_a = self._access_switch("device:access-a")
         access_b = self._access_switch("device:access-b")
         router = dev("device:router", "router", [116])
+        router["port_status"] = {"Vlan116": "up"}
+        access_a["site"] = "site-a"
+        access_b["site"] = "site-b"
         edges = [{"source": source["node_id"], "target": access_a["node_id"],
                   "type": "endpoint_link"},
                  {"source": target["node_id"], "target": access_b["node_id"],
                   "type": "endpoint_link"},
-                 {"source": router["node_id"], "target": access_a["node_id"], "type": "lldp"},
-                 {"source": router["node_id"], "target": access_b["node_id"], "type": "lldp"}]
+                 {"source": router["node_id"], "target": access_a["node_id"],
+                  "local_port": "ge-0/0/1", "type": "lldp"},
+                 {"source": router["node_id"], "target": access_b["node_id"],
+                  "local_port": "ge-0/0/2", "type": "lldp"}]
         doc = run([source, target, access_a, access_b, router],
                   {"endpoint:target": {"importance": "high"}}, edges=edges)
         route = doc["targets"][0]["routes"][0]
@@ -427,24 +462,20 @@ class TestReachability(unittest.TestCase):
         target = host("endpoint:target", 116, cves=[cve("C", 9.0)], risk=5.0)
         router = dev("device:router", "router", [116, 117])
         source["site"], target["site"], router["site"] = "site-a", "site-b", "site-b"
-        other_target = host("endpoint:other", 117, cves=[cve("C", 9.0)], risk=4.0)
-        other_target["site"] = "site-b"
         access_a = self._access_switch("device:access-a", 116, "site-a")
         access_b = self._access_switch("device:access-b", 116, "site-b")
-        other_target["vlan"] = 117
+        router["port_status"] = {"ge-0/0/1.116": "up", "ge-0/0/2.117": "up"}
         edges = [{"source": source["node_id"], "target": access_a["node_id"],
                   "type": "endpoint_link"},
                  {"source": target["node_id"], "target": access_b["node_id"],
                   "type": "endpoint_link"},
-                 {"source": other_target["node_id"], "target": access_b["node_id"],
-                  "type": "endpoint_link"},
-                 {"source": router["node_id"], "target": access_b["node_id"], "type": "lldp"}]
-        doc = run([source, target, other_target, access_a, access_b, router],
-                  {"endpoint:target": {"importance": "high"},
-                   "endpoint:other": {"importance": "high"}}, edges=edges)
-        routes = {block["id"]: block["routes"] for block in doc["targets"]}
-        self.assertEqual(routes["endpoint:target"], [])
-        self.assertEqual(routes["endpoint:other"], [])
+                 {"source": router["node_id"], "target": access_a["node_id"],
+                  "local_port": "ge-0/0/1", "type": "lldp"},
+                 {"source": router["node_id"], "target": access_b["node_id"],
+                  "local_port": "ge-0/0/2", "type": "lldp"}]
+        doc = run([source, target, access_a, access_b, router],
+                  {"endpoint:target": {"importance": "high"}}, edges=edges)
+        self.assertEqual(doc["targets"][0]["routes"], [])
 
     def test_same_vid_within_one_site_still_has_direct_edge(self):
         doc = run([host("endpoint:source", 116, cves=[cve("C", 9.0)], agent="001"),

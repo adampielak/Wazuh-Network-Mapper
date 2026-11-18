@@ -92,7 +92,7 @@ LIMITS = [
 
 def _qualifies(row: dict, cross_router: bool) -> bool:
     """A CVE gives a weakness step: no privileges, no user interaction, and a
-    reachable attack vector — Network always, Adjacent only within a VLAN."""
+    reachable attack vector: Network always, Adjacent only within a VLAN."""
     if row["privileges_required"] != "NONE" or row["user_interaction"] != "NONE":
         return False
     if cross_router:
@@ -303,19 +303,22 @@ class AttackPathEngine:
             return edge.get("local_port")
         return None
 
-    def _subinterface_ports(self, node: dict, vlans: set) -> dict:
+    def _subinterface_ports(self, node: dict, vlans: set) -> tuple[dict, set]:
         ports: dict[int, set[str]] = {}
+        bases = set()
         for name, state in (node.get("port_status") or {}).items():
-            if state != "up" or _is_non_vlan_type(str(name)):
+            if _is_non_vlan_type(str(name)):
                 continue
             match = _SUBINTERFACE.fullmatch(str(name).strip())
             if not match:
                 continue
             base, unit = match.groups()
+            base = self._normalise_port(base)
+            bases.add(base)
             vid = int(unit)
-            if vid in vlans:
-                ports.setdefault(vid, set()).add(self._normalise_port(base))
-        return ports
+            if state == "up" and vid in vlans:
+                ports.setdefault(vid, set()).add(base)
+        return ports, bases
 
     def _router_vlan_sides(self, nid: str, vlans: set) -> dict:
         node = self.by_id[nid]
@@ -339,14 +342,14 @@ class AttackPathEngine:
             component = self.l2_component.get(nid, nid)
             return {self._vlan_key(node, vid, component): "inferred" for vid in vlans}
 
-        port_interfaces = self._subinterface_ports(node, vlans)
+        port_interfaces, subinterface_bases = self._subinterface_ports(node, vlans)
         for edge, other, component in neighbours:
             neighbor = self.by_id[other]
             side_vids = self.component_vlans.get((neighbor.get("site"), component), set())
             edge_port = self._normalise_port(self._router_side_port(edge, nid))
             for vid in vlans & side_vids:
                 interfaces = port_interfaces.get(vid, set())
-                if edge_port and interfaces:
+                if edge_port and edge_port in subinterface_bases:
                     if edge_port not in interfaces:
                         continue
                     confidence = "observed"

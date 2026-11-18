@@ -18,7 +18,7 @@ function Panel({ title, children, className = '' }: { title: string; children: R
 function TopTable({ title, rows }: { title: string; rows: DashboardTop[] }) {
   return <Panel title={title} className="vmDashboardTopPanel">
     {rows.length ? <table className="vmTable vmDashboardTop"><thead><tr><th>Name</th><th>Count</th></tr></thead><tbody>
-      {rows.map((row) => <tr key={row.name}><td title={row.name}>{row.name}</td><td>{row.count}</td></tr>)}
+      {rows.map((row, index) => <tr key={`${row.name}-${index}`}><td title={row.name}>{row.name}</td><td>{row.count}</td></tr>)}
     </tbody></table> : <Empty />}
   </Panel>;
 }
@@ -112,7 +112,7 @@ const cveColumns = [
   { field: 'assets', name: 'Assets', sortable: true, align: 'right' as const },
   { field: 'maxEpss', name: 'Max EPSS', sortable: true, align: 'right' as const, render: (v: number) => v.toFixed(4) },
   { field: 'kev', name: 'KEV', sortable: true, render: (v: boolean) => v ? <EuiBadge color="danger">KEV</EuiBadge> : 'No' },
-  { field: 'maxCvss', name: 'Max CVSS', sortable: true, align: 'right' as const, render: (v: number | null) => v === null ? 'No score' : v.toFixed(1) },
+  { field: 'maxCvss', name: 'Max CVSS', sortable: true, align: 'right' as const, render: (v: number | null) => typeof v !== 'number' || !Number.isFinite(v) ? 'No score' : v.toFixed(1) },
 ];
 
 export function Dashboard({ reports, onSeverityClick }: { reports: AssetReport[]; onSeverityClick: (severity: Severity) => void }) {

@@ -30,6 +30,8 @@ export type DashboardStats = {
 };
 
 const emptySeverity = (): Record<Severity, number> => ({ critical: 0, high: 0, medium: 0, low: 0, unknown: 0 });
+const compareCodePoints = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+const finiteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const emptyStats = (): DashboardStats => ({
   severity: emptySeverity(), findings: 0, uniqueCves: 0, affectedAssets: 0, kevFindings: 0,
   epssHighFindings: 0, maxEpss: 0, topCves: [], topPlatforms: [], topAssets: [], topPackages: [],
@@ -37,7 +39,7 @@ const emptyStats = (): DashboardStats => ({
 });
 const top = (counts: Map<string, number>) => [...counts.entries()]
   .map(([name, count]) => ({ name, count }))
-  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  .sort((a, b) => b.count - a.count || compareCodePoints(a.name, b.name))
   .slice(0, 5);
 
 /** Aggregate only findings present in the already-filtered asset reports. */
@@ -53,15 +55,15 @@ export function dashboardStats(reports: AssetReport[]): DashboardStats {
     if (!report.cves.length) continue;
     stats.affectedAssets += 1;
     for (const finding of report.cves) {
-      const severity = finding.severity || 'unknown';
+      const severity = SEVERITIES.includes(finding.severity as Severity) ? finding.severity as Severity : 'unknown';
       stats.findings += 1;
       stats.severity[severity] += 1;
-      const epss = Math.max(0, Math.min(1, finding.epss ?? 0));
+      const epss = Math.max(0, Math.min(1, finiteNumber(finding.epss) ? finding.epss : 0));
       stats.maxEpss = Math.max(stats.maxEpss, epss);
       if (finding.kev) stats.kevFindings += 1;
       if (epss >= 0.5) stats.epssHighFindings += 1;
       stats.epssBuckets[Math.min(9, Math.floor(epss * 10))] += 1;
-      if (finding.cvss === null) stats.cvssBuckets[11] += 1;
+      if (!finiteNumber(finding.cvss)) stats.cvssBuckets[11] += 1;
       else stats.cvssBuckets[Math.max(0, Math.min(10, Math.floor(finding.cvss)))] += 1;
       if (finding.package) packages.set(finding.package, (packages.get(finding.package) || 0) + 1);
       const platform = report.node.vendor || 'Unknown';
@@ -76,7 +78,7 @@ export function dashboardStats(reports: AssetReport[]): DashboardStats {
       row.findings += 1;
       row.maxEpss = Math.max(row.maxEpss, epss);
       row.kev = row.kev || !!finding.kev;
-      if (finding.cvss !== null) row.maxCvss = row.maxCvss === null ? finding.cvss : Math.max(row.maxCvss, finding.cvss);
+      if (finiteNumber(finding.cvss)) row.maxCvss = row.maxCvss === null ? finding.cvss : Math.max(row.maxCvss, finding.cvss);
       cveAssets.get(finding.cve)!.add(report.id);
 
       const year = finding.published_at && /^\d{4}/.test(finding.published_at)
@@ -97,11 +99,11 @@ export function dashboardStats(reports: AssetReport[]): DashboardStats {
   stats.topPlatforms = top(platforms);
   stats.topAssets = reports.filter((report) => report.cves.length > 0)
     .slice()
-    .sort((a, b) => b.cves.length - a.cves.length || a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+    .sort((a, b) => b.cves.length - a.cves.length || compareCodePoints(a.name, b.name) || compareCodePoints(a.id, b.id))
     .slice(0, 5)
     .map((report) => ({ name: report.name, count: report.cves.length }));
   stats.topPackages = top(packages);
-  stats.years = [...years.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([year, counts]) => ({ year, counts }));
-  stats.cveRows = [...cves.values()].sort((a, b) => a.cve.localeCompare(b.cve));
+  stats.years = [...years.entries()].sort(([a], [b]) => compareCodePoints(a, b)).map(([year, counts]) => ({ year, counts }));
+  stats.cveRows = [...cves.values()].sort((a, b) => compareCodePoints(a.cve, b.cve));
   return stats;
 }

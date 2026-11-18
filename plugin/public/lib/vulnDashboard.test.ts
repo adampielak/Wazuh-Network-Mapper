@@ -59,6 +59,36 @@ describe('dashboardStats', () => {
     expect(tied.topCves.map((row) => row.name)).toEqual(['CVE-2099-0004', 'CVE-2099-0005']);
   });
 
+  it('uses code-point ordering for ties regardless of the host locale', () => {
+    const tied = dashboardStats([
+      asset('asset-z', 'zeta.example', 'zeta', [finding({ cve: 'CVE-2099-0006' })]),
+      asset('asset-a', 'äther.example', 'äther', [finding({ cve: 'CVE-2099-0007' })]),
+    ]);
+    expect(tied.topAssets.map((row) => row.name)).toEqual(['zeta.example', 'äther.example']);
+    expect(tied.topPlatforms.map((row) => row.name)).toEqual(['zeta', 'äther']);
+  });
+
+  it('treats non-finite and missing EPSS as zero and CVSS as no score', () => {
+    const stats = dashboardStats([asset('asset-a', 'alpha.example', null, [
+      finding({ cve: 'CVE-2099-0010', epss: Number.NaN, cvss: Number.NaN }),
+      finding({ cve: 'CVE-2099-0011', epss: undefined as unknown as number, cvss: undefined as unknown as number }),
+      finding({ cve: 'CVE-2099-0012', epss: Number.POSITIVE_INFINITY, cvss: Number.POSITIVE_INFINITY }),
+    ])]);
+    expect(stats.maxEpss).toBe(0);
+    expect(stats.epssHighFindings).toBe(0);
+    expect(stats.epssBuckets).toEqual([3, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    expect(stats.cvssBuckets[11]).toBe(3);
+    expect(stats.cveRows.map((row) => row.maxCvss)).toEqual([null, null, null]);
+  });
+
+  it('counts an unrecognized severity string as unknown', () => {
+    const stats = dashboardStats([asset('asset-a', 'alpha.example', null, [
+      finding({ cve: 'CVE-2099-0013', severity: 'moderate' as any }),
+    ])]);
+    expect(stats.severity).toEqual({ critical: 0, high: 0, medium: 0, low: 0, unknown: 1 });
+    expect(Object.values(stats.severity).every(Number.isFinite)).toBe(true);
+  });
+
   it('aggregates CVE rows with unique asset counts and maximum values', () => {
     expect(dashboardStats(fixture).cveRows.find((row) => row.cve === 'CVE-2099-0001')).toEqual({
       cve: 'CVE-2099-0001', findings: 2, assets: 2, maxEpss: 1, kev: true, maxCvss: 8,

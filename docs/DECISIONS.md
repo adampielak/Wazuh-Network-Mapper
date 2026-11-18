@@ -36,10 +36,22 @@ mapping file supplies numeric `trust_order` values. For example:
 ```
 
 The class registry is data with source title, date, and verification state.
-`verified: true` means the lead fetched and read that source and received HTTP
-200. A cited source that was not read, including sources shown as 403 in F5A,
-is unverified. An item is marked `source_pending` when all its references are
-unverified; E9 therefore emits `source_pending: true`. E12 reports a two-zone
+`verified: true` means the lead read that source: fetched with HTTP 200, or,
+when the publisher blocks scripted clients, read from a copy whose edition and
+SHA-256 were recorded. A cited source that was not read is unverified. An item
+is marked `source_pending` when all its references are unverified; E9 therefore
+emits `source_pending: true`.
+
+NSA Network Infrastructure Security Guide (U/OO/118623-22, PP-22-0293) is cited
+as Ver. 1.2, October 2023, the current edition; version 1.2 only updated
+reference links of the June 2022 text. Sections: 4.1 and 4.2 for E14, 7.1 for
+E3 and E11 (out-of-band management), 7.4 for E2 and E11 (separate management
+segment), 7.8 for E3, 7.10 for E7, 9.1 and 9.3 for E8, 9.4 for E10. The guide
+has no spanning-tree or BPDU Guard guidance, so E9 no longer cites it. CISA
+AA26-194A (2026-07-13) supports E1, E2, E3, E4, E11 and E14: SNMPv3 authPriv,
+read-only community strings, Smart Install disabled, TFTP and SNMP blocked at
+the edge, management protocols limited by ACL preferably on an out-of-band
+network, local accounts for emergencies only. E12 reports a two-zone
 device as a pivot candidate, not an attack route; an unknown side always makes
 its confidence inferred. It lists every qualifying pair, ordered by observed
 confidence, widest known trust gap, then zone names. For multiple keys in one

@@ -169,7 +169,8 @@ class TestExposure(unittest.TestCase):
         self.assertEqual(item["confidence"], "inferred")
         self.assertEqual(item["evidence"]["ports.admin"], "up")
         self.assertEqual(item["evidence"]["ports.oper"], "down")
-        self.assertTrue(item["source_pending"])
+        self.assertFalse(item["source_pending"])
+        self.assertEqual(item["source_ref"], ["NSA-NISG-1.2"])
 
     def test_e10_uses_shared_port_key_for_neighbor_names(self):
         node = device("device:synthetic-switch", ports=[
@@ -431,7 +432,12 @@ class TestExposure(unittest.TestCase):
         for item in items:
             self.assertIn(item["class"], CLASS_REGISTRY)
             self.assertTrue(item["source_ref"])
-        self.assertTrue(all(item["source_pending"] for item in items if item["class"] == "E10"))
+        e10 = [item for item in items if item["class"] == "E10"]
+        self.assertTrue(e10)
+        self.assertFalse(any(item["source_pending"] for item in e10))
+        e9 = [item for item in items if item["class"] == "E9"]
+        self.assertTrue(e9)
+        self.assertTrue(all(item["source_pending"] for item in e9))
 
     def test_not_observable_classes_never_emit(self):
         graph_doc = routed_graph()

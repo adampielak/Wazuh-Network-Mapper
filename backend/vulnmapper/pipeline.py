@@ -611,9 +611,10 @@ class Pipeline:
         _run_stage(scan, "Attack paths", attackpaths.run_attack_paths,
                    skip=self._attack_paths_skip(scan), label="Computing attack paths",
                    timing="attack_paths_s")
-        _run_stage(scan, "Exposure", self._run_exposure,
-                   skip=self._exposure_skip(scan), label="Computing exposure",
-                   timing="exposure_s")
+        if args.zones:
+            _run_stage(scan, "Exposure", self._run_exposure,
+                       skip=self._exposure_skip(scan), label="Computing exposure",
+                       timing="exposure_s")
         metadata["stages"] = scan.stages
 
         self._log_summary(scan.document)
@@ -644,21 +645,13 @@ class Pipeline:
 
     @staticmethod
     def _exposure_skip(scan: ScanContext) -> Optional[str]:
-        if not scan.args.zones:
-            return "no zone mapping given"
         if scan.exposure_out is None:
             return "no output file given"
         return None
 
     @staticmethod
     def _run_exposure(scan: ScanContext) -> StageResult:
-        with open(scan.args.zones, encoding="utf-8") as f:
-            zones = json.load(f)
-        kev = None
-        if scan.args.kev:
-            with open(scan.args.kev, encoding="utf-8") as f:
-                kev = json.load(f)
-        result = exposure.compute_exposure(scan.document, zones, kev)
+        result = exposure.compute_exposure(scan.document, scan.args.zones, scan.args.kev)
         counts = {
             "nodes_with_items": sum(bool(items) for items in result["nodes"].values()),
             "items": sum(len(items) for items in result["nodes"].values()),

@@ -44,12 +44,10 @@ class TestExposurePipeline(unittest.TestCase):
     def stage(graph, name="Exposure"):
         return next(row for row in graph["metadata"]["stages"] if row["name"] == name)
 
-    def test_without_zones_skips_and_graph_content_is_unchanged(self):
+    def test_without_zones_has_no_exposure_trace_or_file(self):
         without = self.scan()
-        self.assertEqual(self.stage(without), {
-            "name": "Exposure", "status": "skipped", "seconds": None,
-            "note": "no zone mapping given",
-        })
+        self.assertNotIn("Exposure", [row["name"] for row in without["metadata"]["stages"]])
+        self.assertNotIn("exposure_s", without["metadata"]["timing"])
         self.assertFalse(os.path.exists(self.exposure_path))
         with_zones = self.scan("--zones", self.zones_path)
         self.assertEqual(without["nodes"], with_zones["nodes"])
@@ -92,6 +90,15 @@ class TestExposurePipeline(unittest.TestCase):
             graph = self.scan("--zones", self.zones_path)
         self.assertEqual(self.stage(graph)["status"], "failed")
         self.assertIn({"type": "stage_failed", "stage": "Exposure", "error": "ValueError"},
+                      graph["metadata"]["warnings"])
+        self.assertFalse(os.path.exists(self.exposure_path))
+
+    def test_missing_zones_file_fails_only_exposure_stage(self):
+        missing = os.path.join(self.tmp, "missing-zones.json")
+        with self.assertLogs("vulnmapper.pipeline", "ERROR"):
+            graph = self.scan("--zones", missing)
+        self.assertEqual(self.stage(graph)["status"], "failed")
+        self.assertIn({"type": "stage_failed", "stage": "Exposure", "error": "FileNotFoundError"},
                       graph["metadata"]["warnings"])
         self.assertFalse(os.path.exists(self.exposure_path))
 

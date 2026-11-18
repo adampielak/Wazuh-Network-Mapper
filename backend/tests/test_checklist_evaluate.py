@@ -239,6 +239,7 @@ class TestChecks(unittest.TestCase):
                          ("fail", None, {"ports": [{"port": "FastEthernet0/2", "vlan": 10,
                                                       "admin": "up"}],
                                          "total": 1, "enabled": 1, "shut_down": 0,
+                                         "admin_unknown": 0,
                                          "down_recently_not_counted": 0,
                                          "unused_vlans": []}))
         # shut down or not, the same result; only the detail differs
@@ -246,6 +247,14 @@ class TestChecks(unittest.TestCase):
         result = self.check(cid, config(interfaces=ifs))
         self.assertEqual((result[0], result[2]["enabled"], result[2]["shut_down"]),
                          ("fail", 0, 1))
+
+    def test_spare_port_unknown_admin_state_is_counted(self):
+        ifs = config()["interfaces"]
+        ifs[2] = iface("FastEthernet0/2", admin=3, oper=t.DOWN, last_change=1000)
+        result = self.check("spare-ports-in-used-vlan", config(interfaces=ifs))
+        self.assertEqual(result[2]["admin_unknown"], 1)
+        self.assertEqual(result[2]["shut_down"], 0)
+        self.assertEqual(result[2]["ports"][0]["admin"], None)
 
     def test_spare_port_in_an_unused_vlan_passes(self):
         cid = "spare-ports-in-used-vlan"

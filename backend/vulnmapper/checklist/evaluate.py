@@ -305,12 +305,15 @@ class DeviceChecker:
             extra = {"described_not_counted": len(described), "trunk_excluded": self.trunk_excluded}
         if found:
             enabled = sum(ifs[i]["admin"] == t.UP for i in found)
+            shut_down = sum(ifs[i]["admin"] == t.DOWN for i in found)
+            admin_unknown = sum(ifs[i]["admin"] not in (t.UP, t.DOWN) for i in found)
             return FAIL, None, {
                 "ports": [{"port": self._port_name(i), "vlan": vlan_of[i],
                            "admin": ("up" if ifs[i]["admin"] == t.UP else
                                      "down" if ifs[i]["admin"] == t.DOWN else None)}
                           for i in found[:EVIDENCE_CAP]],
-                "total": len(found), "enabled": enabled, "shut_down": len(found) - enabled,
+                "total": len(found), "enabled": enabled, "shut_down": shut_down,
+                "admin_unknown": admin_unknown,
                 "down_recently_not_counted": recent, "unused_vlans": unused, **extra}
         if any(ifs[i]["oper"] is None for i in ports) or unclear \
                 or any(not vlan_of.get(i) for i in spare if i not in described):

@@ -63,12 +63,21 @@ def finding(check_id, **extra):
             "severity": by_id(check_id)["severity"], **extra}
 
 
-def graph(nodes):
-    return {"nodes": nodes, "edges": [], "metadata": {"scan_time": "2026-10-10T00:00:00+00:00"}}
+def graph(nodes, edges=None):
+    if edges is None:
+        l2_nodes = [n for n in nodes if n.get("role") not in ap.ROUTER_ROLES]
+        edges = [{"source": left["node_id"], "target": right["node_id"], "type": "lldp"}
+                 for left, right in zip(l2_nodes, l2_nodes[1:])]
+        for router in (n for n in nodes if n.get("role") in ap.ROUTER_ROLES):
+            edges.extend({"source": router["node_id"], "target": node["node_id"],
+                          "type": "lldp"}
+                         for node in l2_nodes)
+    return {"nodes": nodes, "edges": edges,
+            "metadata": {"scan_time": "2026-10-10T00:00:00+00:00"}}
 
 
-def run(nodes, targets, vulns=None, keep=ap.KEEP_PER_TARGET):
-    return ap.compute(graph(nodes), targets, vulns, keep)
+def run(nodes, targets, vulns=None, keep=ap.KEEP_PER_TARGET, edges=None):
+    return ap.compute(graph(nodes, edges), targets, vulns, keep)
 
 
 # --- the qualifying-CVE rule ------------------------------------------------
@@ -176,10 +185,26 @@ class TestReachability(unittest.TestCase):
         self.assertEqual(starts, {"host:bb", "host:cc"})
 
     def test_lowest_id_router_on_a_tie(self):
-        engine = ap.AttackPathEngine(graph([dev("device:b", "router", [10, 20]),
-                                            dev("device:a", "router", [10, 20])]), None, None)
-        self.assertEqual(engine._router_between({("test-site", 10)}, {("test-site", 20)}, set()),
+        left = host("endpoint:left", 10, unmanaged=True)
+        right = host("endpoint:right", 20, unmanaged=True)
+        routers = [dev("device:b", "router", [10, 20]), dev("device:a", "router", [10, 20])]
+        engine = ap.AttackPathEngine(graph([left, right, *routers]), None, None)
+        self.assertEqual(engine._router_between(engine.vlan_keys[left["node_id"]],
+                                                engine.vlan_keys[right["node_id"]], set()),
                          "device:a")
+
+    def test_same_vid_in_disconnected_l2_islands_has_no_edge_without_site(self):
+        source = host("endpoint:source", 116, cves=[cve("C", 9.0)], agent="001")
+        target = host("endpoint:target", 116, cves=[cve("C", 9.0)], risk=5.0)
+        switch_a = {"node_id": "device:switch-a", "kind": "device", "role": "l2-switch"}
+        switch_b = {"node_id": "device:switch-b", "kind": "device", "role": "l2-switch"}
+        edges = [{"source": source["node_id"], "target": switch_a["node_id"],
+                  "type": "endpoint_link"},
+                 {"source": target["node_id"], "target": switch_b["node_id"],
+                  "type": "endpoint_link"}]
+        doc = run([source, target, switch_a, switch_b],
+                  {"endpoint:target": {"importance": "high"}}, edges=edges)
+        self.assertEqual(doc["targets"][0]["routes"], [])
 
     def test_same_vid_in_different_sites_has_no_direct_or_routed_edge(self):
         source = host("endpoint:source", 116, cves=[cve("C", 9.0)], agent="001")
@@ -216,6 +241,14 @@ class TestReachability(unittest.TestCase):
             "spare-ports-in-used-vlan", evidence={"ports": [
                 {"port": "Gi1/0/7", "vlan": 116, "admin": "down"}], "total": 1,
                 "enabled": 0, "shut_down": 1})])
+        doc = run([switch], {})
+        self.assertEqual(doc["starting_points"], [])
+
+    def test_admin_unknown_spare_port_is_not_a_start_and_is_counted(self):
+        switch = dev("device:switch", "l3-switch", [116], findings=[finding(
+            "spare-ports-in-used-vlan", evidence={"ports": [
+                {"port": "Gi1/0/7", "vlan": 116, "admin": None}], "total": 1,
+                "enabled": 0, "shut_down": 0, "admin_unknown": 1})])
         doc = run([switch], {})
         self.assertEqual(doc["starting_points"], [])
 

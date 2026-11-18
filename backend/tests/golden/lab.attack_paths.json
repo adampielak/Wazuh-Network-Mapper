@@ -10,8 +10,8 @@
       "targets_missing": 0,
       "starting_points": 2,
       "offline_starts": 0,
-      "routes": 0,
-      "pairs_with_route": 0,
+      "routes": 2,
+      "pairs_with_route": 2,
       "pairs_total": 4,
       "placed": 5,
       "not_placed": 7,
@@ -38,9 +38,9 @@
       }
     ],
     "reachability": [
-      "Assets in the same VLAN and site reach each other directly; without a site, VLANs are device-local.",
+      "Assets share a VLAN only within the same L2 connected component; an explicit site further scopes that component.",
       "Assets in different VLANs reach each other only through a device whose role is router or l3-switch with an up layer-3 interface in both VLANs; the lowest-id qualifying router is used.",
-      "Routed VLANs are derived offline from each device's interface names and site.",
+      "VLAN keys are derived from layer-3 interfaces and each node's L2 component.",
       "Firewall and access-control rules are not read, so a route that crosses a router shows only that the two VLANs are routed, not that traffic is permitted."
     ],
     "limits": [
@@ -53,9 +53,10 @@
       "Spare-port lists are truncated by the checklist, so a start may stand for more ports than it lists.",
       "Assets with no known VLAN are left out of reachability.",
       "A CVE with requires_peer is usable only from a node listed in the target's matching protocol peer field.",
+      "Spare-port entries with unknown administrative state are excluded from starts; the checklist reports their count.",
       "An unverified asset is shown as unverified, not as safe."
     ],
-    "most_shared_asset": null
+    "most_shared_asset": "device:00:23:ac:e5:74:00"
   },
   "targets": [
     {
@@ -72,7 +73,64 @@
       "note": null,
       "present": true,
       "label": "L3-Switch",
-      "routes": []
+      "routes": [
+        {
+          "target": "device:00:23:ac:e5:74:00",
+          "start": "host:7a:bd:06:18:06:2c",
+          "start_kind": "unmanaged_host",
+          "steps": [
+            {
+              "kind": "weakness",
+              "cve": "CVE-2006-4950",
+              "attack_vector": "NETWORK",
+              "attack_complexity": "LOW",
+              "value": 0.9,
+              "source": {
+                "title": "NIST IR 7788, Security Risk Analysis of Enterprise Networks Using Probabilistic Attack Graphs",
+                "url": "https://csrc.nist.gov/pubs/ir/7788/final"
+              },
+              "from": "host:7a:bd:06:18:06:2c",
+              "to": "device:00:23:ac:e5:74:00",
+              "destination_ovss": 7.5,
+              "context_findings": []
+            }
+          ],
+          "likelihood": 0.9,
+          "highest_ovss": 7.5,
+          "crosses_router": false,
+          "narrative": "From host:7a:bd:06:18:06:2c (unmanaged, state unknown), take over L3-Switch using CVE-2006-4950 (low complexity).",
+          "rank": 1,
+          "importance": "moderate"
+        },
+        {
+          "target": "device:00:23:ac:e5:74:00",
+          "start": "host:e4:a7:a0:25:ce:ac",
+          "start_kind": "unmanaged_host",
+          "steps": [
+            {
+              "kind": "weakness",
+              "cve": "CVE-2006-4950",
+              "attack_vector": "NETWORK",
+              "attack_complexity": "LOW",
+              "value": 0.9,
+              "source": {
+                "title": "NIST IR 7788, Security Risk Analysis of Enterprise Networks Using Probabilistic Attack Graphs",
+                "url": "https://csrc.nist.gov/pubs/ir/7788/final"
+              },
+              "from": "host:e4:a7:a0:25:ce:ac",
+              "to": "device:00:23:ac:e5:74:00",
+              "destination_ovss": 7.5,
+              "context_findings": []
+            }
+          ],
+          "likelihood": 0.9,
+          "highest_ovss": 7.5,
+          "crosses_router": false,
+          "narrative": "From host:e4:a7:a0:25:ce:ac (unmanaged, state unknown), take over L3-Switch using CVE-2006-4950 (low complexity).",
+          "rank": 2,
+          "importance": "moderate"
+        }
+      ]
     }
   ],
   "starting_points": [
@@ -84,7 +142,8 @@
       ],
       "vlan_keys": [
         {
-          "domain": "device:host:7a:bd:06:18:06:2c",
+          "site": null,
+          "component": "device:54:75:d0:ab:bd:1a",
           "vid": 80
         }
       ]
@@ -97,7 +156,8 @@
       ],
       "vlan_keys": [
         {
-          "domain": "device:host:e4:a7:a0:25:ce:ac",
+          "site": null,
+          "component": "device:54:75:d0:ab:bd:1a",
           "vid": 80
         }
       ]
@@ -127,7 +187,7 @@
       "label": "L3-Switch",
       "dependants": 0,
       "verified": true,
-      "routes_through": 0
+      "routes_through": 2
     },
     {
       "id": "device:5c:8a:38:8b:a1:0b",
@@ -191,7 +251,7 @@
       "label": "host:7a:bd:06:18:06:2c",
       "dependants": 0,
       "verified": true,
-      "routes_through": 0
+      "routes_through": 1
     },
     {
       "id": "host:e4:a7:a0:25:ce:ac",
@@ -199,7 +259,7 @@
       "label": "host:e4:a7:a0:25:ce:ac",
       "dependants": 0,
       "verified": true,
-      "routes_through": 0
+      "routes_through": 1
     }
   ],
   "not_placed": [

@@ -9,11 +9,15 @@ so it cannot be an attack start even when the spare-port hygiene finding still
 reports it. The finding keeps its result and includes `admin` on each listed
 port. This follows [RFC 2863, The Interfaces Group MIB](https://www.rfc-editor.org/rfc/rfc2863).
 
-VLAN membership is keyed by `(site, VID)`, consistent with the VLAN context in
-[RFC 4363, Q-BRIDGE-MIB](https://www.rfc-editor.org/rfc/rfc4363). Nodes without
-a site receive a node-local domain, avoiding inferred L2 connectivity between
-devices whose shared VLAN context is unknown. Existing output `vlans` remains a
-list of integer VIDs; `vlan_keys` also exposes the scoped identity.
+VLAN membership is keyed by `(site, L2 component, VID)` when a site is present,
+and `(L2 component, VID)` otherwise. The component is built from graph edges
+between nodes, without traversing router or L3-switch boundaries. A router's
+VLAN keys use the component of each adjacent non-router neighbour; when that
+side cannot be identified, its own component is used. This follows the VLAN
+bridging scope represented by [RFC 4363, Q-BRIDGE-MIB](https://www.rfc-editor.org/rfc/rfc4363)
+and [IEEE 802.1Q, Bridges and Bridged Networks](https://standards.ieee.org/ieee/802.1q/10323/).
+Existing output `vlans` remains a list of integer VIDs; `vlan_keys` also exposes
+the scoped identity.
 
 An explicitly classified CVE row may set `requires_peer` to a protocol such as
 `bgp`. The CVE lookup/catalogue can supply this field; the attack-path engine

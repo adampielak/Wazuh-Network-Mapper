@@ -55,6 +55,10 @@ Evidence precedence is sub-interface evidence, then Q-BRIDGE membership, then
 inference. A sub-interface match retains its existing behavior even when
 Q-BRIDGE data is also present. Only the router's own membership is used to
 classify its side; the neighboring switch's membership is a later step.
+A matching PVID without a matching `dot1qVlanCurrentEgressPorts` entry remains
+inferred because RFC 4363 `dot1qPvid` describes ingress classification, while
+`dot1qVlanCurrentEgressPorts` describes egress membership. Malformed membership
+data is treated as absent.
 
 ## B7. Exposure is an opt-in pipeline stage
 

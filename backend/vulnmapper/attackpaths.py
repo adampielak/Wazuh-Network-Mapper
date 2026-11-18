@@ -344,25 +344,38 @@ class AttackPathEngine:
 
         port_interfaces, subinterface_bases = self._subinterface_ports(node, vlans)
         membership = node.get("vlan_membership")
+        if not isinstance(membership, dict):
+            membership = None
         membership_ports_by_vlan: dict[int, set[str]] = {}
         membership_vlans_by_port: dict[str, set[int]] = {}
         if membership:
-            for raw_vid, entry in (membership.get("vlans") or {}).items():
+            membership_vlans = membership.get("vlans")
+            if not isinstance(membership_vlans, dict):
+                membership_vlans = {}
+            for raw_vid, entry in membership_vlans.items():
+                if not isinstance(entry, dict):
+                    continue
                 try:
                     vid = int(raw_vid)
                 except (TypeError, ValueError):
                     continue
-                ports = {self._normalise_port(port)
-                         for mode in ("tagged", "untagged")
-                         for port in (entry.get(mode) or [])}
+                ports = set()
+                for mode in ("tagged", "untagged"):
+                    raw_ports = entry.get(mode)
+                    if not isinstance(raw_ports, (list, tuple)):
+                        continue
+                    ports.update(self._normalise_port(port) for port in raw_ports
+                                 if isinstance(port, str))
                 ports.discard(None)
                 membership_ports_by_vlan[vid] = ports
                 for port in ports:
                     membership_vlans_by_port.setdefault(port, set()).add(vid)
-            pvid = membership.get("pvid") or {}
+            pvid = membership.get("pvid")
+            if not isinstance(pvid, dict):
+                pvid = {}
             pvid_by_port = {self._normalise_port(port): int(vid)
                             for port, vid in pvid.items()
-                            if self._normalise_port(port) is not None and
+                            if isinstance(port, str) and self._normalise_port(port) is not None and
                             str(vid).isdigit()}
         else:
             pvid_by_port = {}
@@ -380,8 +393,7 @@ class AttackPathEngine:
                     if membership and edge_port and not edge_port.startswith("bridge_port:"):
                         if edge_port in membership_ports_by_vlan.get(vid, set()):
                             confidence = "observed"
-                        elif (vid in membership_vlans_by_port.get(edge_port, set()) or
-                              pvid_by_port.get(edge_port) == vid):
+                        elif pvid_by_port.get(edge_port) == vid:
                             confidence = "inferred"
                         elif (membership_vlans_by_port.get(edge_port) or
                               edge_port in pvid_by_port):

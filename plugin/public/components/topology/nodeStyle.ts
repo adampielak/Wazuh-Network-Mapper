@@ -7,7 +7,7 @@ import { isOfflineHost } from './inactive';
 import type { CrossLink } from './site';
 
 /**
- * LIVENESS -> corner dot color. This is the dot's ONLY meaning — it must never
+ * LIVENESS -> corner dot color. This is the dot's ONLY meaning; it must never
  * encode risk (a healthy-but-vulnerable host should still read as "up"):
  *   active/online  -> green  (confirmed up)
  *   discovered     -> grey   (FDB-only, liveness unconfirmed)

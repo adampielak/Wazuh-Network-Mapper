@@ -1,4 +1,4 @@
-// role -> icon, in the clean/flat "network diagram" style (lucide, MIT licensed —
+// role -> icon, in the clean/flat "network diagram" style (lucide, MIT licensed,
 // deliberately NOT Cisco's proprietary Packet Tracer assets). Glyphs are chosen
 // to be instantly recognizable: a switch reads as a network node, a router as a
 // router, a firewall as a shield, a host as a monitor, a server as a server.

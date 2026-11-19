@@ -665,7 +665,7 @@ class TestFamilyRules(Base):
         self.assertEqual(result.status, "ok")
         self.assertEqual([c["path"].rsplit("/", 2)[-2] for c in fake.calls], ["cves"])
 
-    def test_vmware_known_build_without_nvd_release_returns_an_empty_match(self):
+    def test_vmware_update_cpe_absent_from_nvd_dictionary_is_unverified(self):
         cases = (
             ("vmware_esxi", "7.0.3 build-24723872",
              "cpe:2.3:o:vmware:esxi:7.0:update_3v:*:*:*:*:*:*",
@@ -680,9 +680,63 @@ class TestFamilyRules(Base):
                 result = lookup(device(vendor="VMware", firmware=firmware,
                                        software_family=family), self.client(fake),
                                 Cache(None, self.clock))
-                self.assertEqual((result.status, result.reason, result.rows), ("ok", None, []))
+                self.assertEqual((result.status, result.reason, result.rows),
+                                 ("unverified", "cpe_not_in_nvd_dictionary", None))
+                self.assertEqual(result.cpe, cpe)
                 self.assertEqual([c["params"].get("cpeName") for c in fake.calls if "cpeName" in c["params"]],
-                                 [cpe])
+                                 [])
+
+    def test_vmware_update_cpe_present_in_nvd_dictionary_is_queried(self):
+        cpe = "cpe:2.3:o:vmware:esxi:7.0:update_3v:*:*:*:*:*:*"
+        product = "cpe:2.3:o:vmware:esxi:*:*:*:*:*:*:*:*"
+        fake = self.nvd(dictionary={product: listed(product), cpe: listed(cpe)}, cves={cpe: []})
+        result = lookup(device(vendor="VMware", firmware="7.0.3 build-24723872",
+                               software_family="vmware_esxi"), self.client(fake),
+                        Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason, result.rows), ("ok", None, []))
+        self.assertEqual([c["params"].get("cpeMatchString") for c in fake.calls
+                          if c["path"].endswith("/cpes/2.0")], [product, cpe])
+        self.assertEqual([c["params"].get("cpeName") for c in fake.calls
+                          if "cpeName" in c["params"]], [cpe])
+
+    def test_vyos_update_qualifier_requires_an_exact_dictionary_entry(self):
+        cpe = "cpe:2.3:o:vyos:vyos:1.1.7:r2:*:*:*:*:*:*"
+        result = lookup(device(vendor="VyOS", firmware="VyOS 1.1.7:r2",
+                               software_family="vyos"), self.client(self.nvd(dictionary={})),
+                        Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason, result.rows),
+                         ("unverified", "cpe_not_in_nvd_dictionary", None))
+        self.assertEqual(result.cpe, cpe)
+
+    def test_vyos_update_qualifier_present_in_nvd_dictionary_is_queried(self):
+        cpe = "cpe:2.3:o:vyos:vyos:1.2.0:rc1:*:*:*:*:*:*"
+        fake = self.nvd(dictionary={cpe: listed(cpe)}, cves={cpe: []})
+        result = lookup(device(vendor="VyOS", firmware="VyOS 1.2.0:rc1",
+                               software_family="vyos"), self.client(fake), Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason, result.rows), ("ok", None, []))
+        self.assertEqual([c["params"].get("cpeMatchString") for c in fake.calls
+                          if c["path"].endswith("/cpes/2.0")], [cpe])
+        self.assertEqual([c["params"].get("cpeName") for c in fake.calls
+                          if "cpeName" in c["params"]], [cpe])
+
+    def test_update_cpe_dictionary_api_error_uses_unavailable_status(self):
+        cpe = "cpe:2.3:o:vmware:esxi:7.0:update_3v:*:*:*:*:*:*"
+        product = "cpe:2.3:o:vmware:esxi:*:*:*:*:*:*:*:*"
+        backing = self.nvd(dictionary={product: listed(product)}, cves={cpe: []})
+
+        def fail_exact_query(url, headers, timeout):
+            params = dict(parse_qsl(urlsplit(url).query, keep_blank_values=True))
+            if params.get("cpeMatchString") == cpe:
+                return 403, None, {}
+            return backing(url, headers, timeout)
+
+        client = nvd.NvdClient(transport=fail_exact_query, clock=self.clock, api_key="",
+                               use_env_key=False)
+        result = lookup(device(vendor="VMware", firmware="7.0.3 build-24723872",
+                               software_family="vmware_esxi"), client, Cache(None, self.clock))
+        self.assertEqual((result.status, result.reason), ("unavailable", "unreachable"))
+        self.assertEqual([c["params"].get("cpeName") for c in backing.calls
+                          if "cpeName" in c["params"]], [])
 
 
 

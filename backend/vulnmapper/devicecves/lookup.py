@@ -73,7 +73,7 @@ class Lookup:
     fetched_at: Optional[str] = None
     stale: bool = False
     from_cache: bool = False             # every answer came from the cache
-    reason: Optional[str] = None         # unreachable | budget | not_in_dictionary | invalid_query
+    reason: Optional[str] = None         # unreachable | budget | not_in_dictionary | cpe_not_in_nvd_dictionary | invalid_query
     queries: list = field(default_factory=list)
     source: str = SOURCE_NVD
     undecided: Optional[list] = None     # Junos: CVE ids the records make no claim on
@@ -126,6 +126,12 @@ def _stale_or_unanswered(entry: Optional[dict], result: Lookup, reason: str) -> 
 def _answered(data) -> bool:
     """A CVE query's answer, empty or not, is kept as long as one with CVEs."""
     return True
+
+
+def _has_update_token(cpe: str) -> bool:
+    """Whether the CPE has a separate update component rather than a wildcard."""
+    parts = cpe.split(":")
+    return len(parts) > 6 and parts[6] != "*"
 
 
 def _valid(entry: dict) -> dict:
@@ -250,15 +256,26 @@ def lookup(ident: dict, client: NvdClient, cache: Cache, juniper=None,
             listed_rule = (FAMILIES.get(ident.get("family")) or {}).get("listed", "release")
             cves, seen, fetched = [], set(), []
             for cpe in [ident["cpe"]] + list(ident.get("extra_cpes") or []):
+                has_update_token = _has_update_token(cpe)
                 if listed_rule != "skip":
                     probe = cpe if listed_rule == "release" else \
                         ":".join(cpe.split(":")[:5] + ["*"] * 8)
                     listed = _answer(cache, f"cpe-dictionary:{probe}",
                                      lambda probe=probe: client.cpe_listed(probe), bool, result)
                     if not listed["data"]:
-                        result.status, result.reason = STATUS_UNVERIFIED, "not_in_dictionary"
+                        reason = "cpe_not_in_nvd_dictionary" if has_update_token and probe == cpe \
+                            else "not_in_dictionary"
+                        result.status, result.reason = STATUS_UNVERIFIED, reason
                         result.fetched_at = listed["fetched_at"]
                         return result
+                    if has_update_token and probe != cpe:
+                        exact = _answer(cache, f"cpe-dictionary:{cpe}",
+                                        lambda cpe=cpe: client.cpe_listed(cpe), bool, result)
+                        if not exact["data"]:
+                            result.status, result.reason = STATUS_UNVERIFIED, \
+                                "cpe_not_in_nvd_dictionary"
+                            result.fetched_at = exact["fetched_at"]
+                            return result
                 answer = _answer(cache, f"cves:{cpe}",
                                  lambda cpe=cpe: [trim_cve(c)
                                                   for c in client.cves_for_cpe(cpe, IS_VULNERABLE)],

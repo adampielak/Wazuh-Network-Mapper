@@ -1,7 +1,7 @@
 import React from 'react';
-import { EuiBadge, EuiInMemoryTable, EuiPanel, EuiText, EuiTitle } from '@elastic/eui';
+import { EuiBadge, EuiBasicTableColumn, EuiInMemoryTable, EuiPanel, EuiText, EuiTitle } from '@elastic/eui';
 import { AssetReport, Severity, SEVERITIES } from '../../lib/report';
-import { DashboardStats, DashboardTop, dashboardStats } from '../../lib/vulnDashboard';
+import { DashboardCve, DashboardStats, DashboardTop, dashboardStats } from '../../lib/vulnDashboard';
 import { SEV_META } from './format';
 
 const LABELS: Record<Severity, string> = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low', unknown: 'No CVSS score' };
@@ -106,7 +106,7 @@ function PublicationYears({ stats }: { stats: DashboardStats }) {
   </>;
 }
 
-const cveColumns = [
+const cveColumns: Array<EuiBasicTableColumn<DashboardCve>> = [
   { field: 'cve', name: 'CVE', sortable: true },
   { field: 'findings', name: 'Findings', sortable: true, align: 'right' as const },
   { field: 'assets', name: 'Assets', sortable: true, align: 'right' as const },

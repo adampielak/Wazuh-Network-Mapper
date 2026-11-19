@@ -64,13 +64,15 @@ def vendor_from_descr(sys_descr: Optional[str]) -> Optional[str]:
     lowered = sys_descr.lower()
     for needle, name in (("cisco", "Cisco"), ("fortigate", "Fortinet"),
                          ("fortinet", "Fortinet"), ("juniper", "Juniper"),
-                         ("arista", "Arista"), ("mikrotik", "MikroTik")):
+                         ("arista", "Arista"), ("mikrotik", "MikroTik"),
+                         ("vyos", "VyOS")):
         if needle in lowered:
             return name
     return None
 
 
 _JUNIPER_PART_NUMBER = re.compile(r"^\d{3}-\d{6}$")
+_VYOS_DESCR = re.compile(r"^VyOS\s+(\S+)", re.I)
 # Some chassis name a product number first and the model in brackets:
 # "Juniper Networks, Inc. JNP10003 [MX10003] internet router, ...".
 _JUNIPER_DESCR_MODEL = re.compile(r"^Juniper Networks, Inc\.\s+(\S+)(?:\s+\[([^\]\s]+)\])?\s")
@@ -127,6 +129,12 @@ async def fetch(snmp_client, ip: str) -> Optional[dict]:
     specifics = entity.merge(specifics, inventory)
     if vendor_name == "Juniper":
         specifics["model"] = juniper_model(specifics.get("model"), sys_descr)
+    software_family = detect_family(vendor_name, sys_descr, sys_object_id)
+    if software_family == "vyos" and not specifics.get("firmware"):
+        # No vendor module reads VyOS, so its release is known
+        # only from sysDescr: "VyOS 1.4.3", "VyOS 1.5-stream-2025-Q2", "VyOS 2025.11".
+        m = _VYOS_DESCR.match(sys_descr or "")
+        specifics["firmware"] = m.group(1) if m else None
 
     return {
         "hostname": base.get(OID_SYS_NAME),
@@ -138,5 +146,5 @@ async def fetch(snmp_client, ip: str) -> Optional[dict]:
         "chassis_id": normalize_chassis_id(raw_chassis),
         "cap_enabled": base.get(OID_LLDP_LOC_SYS_CAP_ENABLED),
         "sys_descr": sys_descr,
-        "software_family": detect_family(vendor_name, sys_descr, sys_object_id),
+        "software_family": software_family,
     }

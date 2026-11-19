@@ -14,7 +14,7 @@ from vulnmapper.assemble import assemble
 from vulnmapper.liveness import liveness_pass
 from vulnmapper.network import parse
 from vulnmapper.network import identity
-from vulnmapper.network.identity import base_mac, juniper_model
+from vulnmapper.network.identity import base_mac, juniper_model, vendor_from_descr
 from vulnmapper.network.snmp import OID_SYS_DESCR, OID_SYS_NAME, OID_SYS_OBJECT_ID
 
 AP_MAC = "54:75:d0:ab:bd:1a"        # Gi0 (and its sub-interfaces) of the access point
@@ -174,3 +174,14 @@ class TestJuniperModel(unittest.TestCase):
         descr = "Arista Networks EOS version 4.30 running on an Arista DCS-7050"
         got = self._fetch(descr, "1.3.6.1.4.1.30065.1.1", {"model": "750-047862"})
         self.assertEqual(got["model"], "750-047862")
+
+    def test_fetch_identifies_vyos_from_sysdescr(self):
+        for descr, firmware in (("VyOS 1.5-stream-2025-Q2", "1.5-stream-2025-Q2"),
+                                ("VyOS 2025.11", "2025.11"),
+                                ("VyOS 1.4.3", "1.4.3")):
+            got = self._fetch(descr, "1.3.6.1.4.1.8072.3.2.10", {})
+            self.assertEqual((got["vendor"], got["software_family"], got["firmware"]),
+                             ("VyOS", "vyos", firmware), descr)
+
+    def test_vendor_from_descr_names_vyos(self):
+        self.assertEqual(vendor_from_descr("VyOS 2025.11"), "VyOS")

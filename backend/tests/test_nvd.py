@@ -665,6 +665,25 @@ class TestFamilyRules(Base):
         self.assertEqual(result.status, "ok")
         self.assertEqual([c["path"].rsplit("/", 2)[-2] for c in fake.calls], ["cves"])
 
+    def test_vmware_known_build_without_nvd_release_returns_an_empty_match(self):
+        cases = (
+            ("vmware_esxi", "7.0.3 build-24723872",
+             "cpe:2.3:o:vmware:esxi:7.0:update_3v:*:*:*:*:*:*",
+             "cpe:2.3:o:vmware:esxi:*:*:*:*:*:*:*:*"),
+            ("vmware_vcenter", "7.0.3 build-24927011",
+             "cpe:2.3:a:vmware:vcenter_server:7.0:update3w:*:*:*:*:*:*",
+             "cpe:2.3:a:vmware:vcenter_server:*:*:*:*:*:*:*:*"),
+        )
+        for family, firmware, cpe, product in cases:
+            with self.subTest(family=family, firmware=firmware):
+                fake = self.nvd(dictionary={product: listed(product)}, cves={})
+                result = lookup(device(vendor="VMware", firmware=firmware,
+                                       software_family=family), self.client(fake),
+                                Cache(None, self.clock))
+                self.assertEqual((result.status, result.reason, result.rows), ("ok", None, []))
+                self.assertEqual([c["params"].get("cpeName") for c in fake.calls if "cpeName" in c["params"]],
+                                 [cpe])
+
 
 
 class TestErrorBase(unittest.TestCase):

@@ -228,6 +228,9 @@ def lookup(ident: dict, client: NvdClient, cache: Cache, juniper=None,
     the records needing configuration the device's backup lacks."""
     result = Lookup(status=STATUS_UNIDENTIFIED, match=None, product=ident.get("product"),
                     cpe=ident.get("cpe"), from_cache=True)
+    if ident.get("unverified_reason"):
+        result.status, result.reason = STATUS_UNVERIFIED, ident["unverified_reason"]
+        return result
     if ident.get("match") == "none":
         result.match = "none"
         result.status, result.reason = STATUS_UNVERIFIED, "no_cpe_rule"

@@ -38,7 +38,7 @@ How one record decides a device (:func:`decide`):
 
   * Each affected block is read on its own. A block for other platforms (its
     ``platforms`` field, or "on ..." in its product name) is skipped. A model
-    this module cannot place (a part number) matches every platform block.
+    this module cannot place (a part number) is not assigned a scoped block.
   * Within a block, an explicit unaffected entry covering the release wins
     over an affected one: Juniper states the release a flaw was introduced in,
     or a service release that does not carry it, as an unaffected entry beside
@@ -58,8 +58,9 @@ description: "Juniper Networks Junos OS on SRX Series allows ...". Only then is
 the description read (:func:`description_platforms`): the phrase that directly
 follows "Junos OS [Evolved] on", cut before its verb. A model outside every
 platform it names gives UNAFFECTED (``platform_description``). A phrase naming
-no recognised family ("Junos Fusion satellite devices", "all platforms") and a
-model that cannot be placed keep the CVE, as with structured platform text.
+no recognised family ("Junos Fusion satellite devices") remains unscoped. A
+model that cannot be placed is excluded when the description names a known
+platform family.
 Platform words elsewhere in the description are not read.
 """
 
@@ -444,15 +445,17 @@ def model_family(model: str) -> Optional[tuple]:
 
 
 def platform_matches(model: str, texts: list) -> bool:
-    """Whether a device of ``model`` is among the platforms ``texts`` name. A
-    model that cannot be placed, or texts naming nothing recognisable, match."""
+    """Whether a device matches platform text; unplaceable models match only
+    when the text does not identify a supported platform restriction."""
+    parsed = [platform_terms(text) for text in texts]
+    if not any(terms is not None for terms in parsed):
+        return True
     place = model_family(model)
     if place is None:
-        return True
+        return False
     fam, low = place
     any_terms = False
-    for text in texts:
-        terms = platform_terms(text)
+    for terms in parsed:
         if terms is None:
             return True
         any_terms = True

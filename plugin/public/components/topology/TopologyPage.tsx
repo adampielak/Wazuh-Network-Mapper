@@ -31,8 +31,8 @@ import { DeviceDetail } from './DeviceDetail';
 import { MapLegend } from './MapLegend';
 import { hiddenKeyOf, offlineHosts, visibleSelection } from './inactive';
 import { BandOptions, withoutIsp } from './bands';
-import { ALL_SITES, filterBySite, siteOf, siteTabs, tabOf } from './site';
-import { filterByProject, isProjectTab, projectOfTab, projectTabs } from './project';
+import { ALL_SITES, filterBySite, normalizeSavedTab, siteOf, siteTabs, tabOf } from './site';
+import { filterByProject, isProjectTab, projectOfTab, projectTabs, topologyTabs } from './project';
 
 const TAB_KEY = 'vulnmapper.topology.site';
 const DEFAULT_TAB = 'DC1';
@@ -41,7 +41,7 @@ const DEFAULT_TAB = 'DC1';
 // blocked, so every access is guarded.
 function savedTab(): string | null {
   try {
-    return window.sessionStorage.getItem(TAB_KEY);
+    return normalizeSavedTab(window.sessionStorage.getItem(TAB_KEY));
   } catch {
     return null;
   }
@@ -173,13 +173,12 @@ export function TopologyPage() {
   // Site tabs, from nodes that carry a site. The ISP row is off by default and
   // is cut out before the tabs are counted, so a tab's count matches what it draws.
   const base = useMemo(() => (graph && !showIsp ? withoutIsp(graph) : graph), [graph, showIsp]);
-  // Project tabs follow the site tabs. A project only picks members out of
-  // the graph, so with projects but no sites the map still gets an All tab.
+  // Project tabs select cross-cutting members while retaining each site's view.
   const tabs = useMemo(() => {
     if (!base) return [];
     const sites = siteTabs(base);
     const projects = projectTabs(base);
-    return projects.length && !sites.length ? [ALL_SITES, ...projects] : [...sites, ...projects];
+    return topologyTabs(sites, projects);
   }, [base]);
   const tab = tabs.includes(tabChoice || '') ? tabChoice! : tabs.includes(DEFAULT_TAB) ? DEFAULT_TAB : tabs[0];
   const siteView = useMemo(

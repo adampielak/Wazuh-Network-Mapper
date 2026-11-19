@@ -114,6 +114,13 @@ class TestStatusTable(unittest.TestCase):
         self.assertEqual(node["cve_lookup"]["status"], "unverified")
         self.assertIsNone(node["cve_summary"])
 
+    def test_vmware_unknown_build_has_specific_unverified_reason(self):
+        (node,), _ = self.stage(device(vendor="VMware", model="ESXi", firmware="7.0.3 build-99999999",
+                                       software_family="vmware_esxi"))
+        self.assertEqual((node["cve_lookup"]["status"], node["cve_lookup"]["reason"]),
+                         ("unverified", "version_update_unknown"))
+        self.assertEqual(self.client.requests, 0)
+
     def test_device_not_polled_but_with_a_recorded_family_is_looked_up(self):
         (node,), result = self.stage(device(pollable=False, status="discovered"))
         self.assertEqual(node["cve_lookup"]["status"], "ok")

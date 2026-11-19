@@ -33,13 +33,29 @@ export function projectsOf(n: Pick<GraphNode, "projects">): string[] {
 }
 
 /**
- * Project tab keys, one per project that tags at least one node, sorted by
- * name. Empty when no node carries a project.
+ * Project tab keys, one per project that tags at least one node. Empty when no
+ * node carries a project; fixed project names retain their contract order.
  */
 export function projectTabs(graph: G): string[] {
   const names = new Set<string>();
   for (const n of graph.nodes) for (const p of projectsOf(n)) names.add(p);
-  return [...names].sort().map(projectTabKey);
+  const order = ["DCMS", "AI", "VMWare"];
+  return [...names].sort((a, b) => {
+    const ai = order.indexOf(a), bi = order.indexOf(b);
+    if (ai >= 0 || bi >= 0) return (ai < 0 ? order.length : ai) - (bi < 0 ? order.length : bi);
+    return a < b ? -1 : a > b ? 1 : 0;
+  }).map(projectTabKey);
+}
+
+export function topologyTabs(sites: string[], projects: string[]): string[] {
+  const available = new Set([...sites, ...projects]);
+  const fixed = ["DC1", "DC2", projectTabKey("DCMS"), projectTabKey("AI"), "D10", "SB",
+    projectTabKey("VMWare")];
+  const ordered = fixed.filter((name) => available.has(name));
+  const otherProjects = projects.filter((name) => !fixed.includes(name));
+  return [...ordered, ...otherProjects,
+    ...(available.has("Other") ? ["Other"] : []),
+    ...(available.has("ALL") ? ["ALL"] : [])];
 }
 
 /**

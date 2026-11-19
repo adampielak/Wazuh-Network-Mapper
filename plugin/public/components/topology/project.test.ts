@@ -1,4 +1,4 @@
-import { filterByProject, isProjectTab, projectOfTab, projectTabKey, projectTabs, projectsOf } from './project';
+import { filterByProject, isProjectTab, projectOfTab, projectTabKey, projectTabs, projectsOf, topologyTabs } from './project';
 import { filterBySite } from './site';
 
 const n = (id: string, site?: string, projects?: unknown) => ({
@@ -26,6 +26,11 @@ describe('projectTabs', () => {
     const g = { nodes: [n('a', 'X', ['Q', 'P']), n('b', 'X', ['P']), n('c')], edges: [] } as any;
     expect(projectTabs(g)).toEqual([projectTabKey('P'), projectTabKey('Q')]);
   });
+  it('orders the fixed project tabs DCMS, AI, VMWare', () => {
+    const g = { nodes: [n('a', undefined, ['VMWare']), n('b', undefined, ['AI']),
+      n('c', undefined, ['DCMS'])], edges: [] } as any;
+    expect(projectTabs(g)).toEqual([projectTabKey('DCMS'), projectTabKey('AI'), projectTabKey('VMWare')]);
+  });
   it('is empty without projects', () => {
     expect(projectTabs({ nodes: [n('a', 'X')], edges: [] } as any)).toEqual([]);
   });
@@ -35,6 +40,15 @@ describe('projectTabs', () => {
     expect(isProjectTab(key)).toBe(true);
     expect(isProjectTab('X')).toBe(false);
     expect(projectOfTab(key)).toBe('X');
+  });
+});
+
+describe('topologyTabs', () => {
+  it('combines tabs in the fixed contract order and keeps ALL last', () => {
+    expect(topologyTabs(['DC1', 'D10', 'SB', 'Other', 'ALL'],
+      [projectTabKey('VMWare'), projectTabKey('AI'), projectTabKey('DCMS'), projectTabKey('X')]))
+      .toEqual(['DC1', projectTabKey('DCMS'), projectTabKey('AI'), 'D10', 'SB',
+        projectTabKey('VMWare'), projectTabKey('X'), 'Other', 'ALL']);
   });
 });
 
@@ -54,8 +68,8 @@ describe('filterByProject', () => {
   });
   it('lists links to non-members by the site tab of the peer', () => {
     const v = filterByProject(g, projectTabKey('P'));
-    expect(v.cross.get('a')).toEqual([{ tab: 'X', peers: ['d'] }]);
-    expect(v.cross.get('c')).toEqual([{ tab: 'Y', peers: ['y0'] }]);
+    expect(v.cross.get('a')).toEqual([{ tab: 'Other', peers: ['d'] }]);
+    expect(v.cross.get('c')).toEqual([{ tab: 'Other', peers: ['y0'] }]);
     expect(v.cross.has('b')).toBe(false);
     expect(v.crossEdges).toBe(2);
   });
@@ -64,7 +78,8 @@ describe('filterByProject', () => {
     expect(v.graph.edges.some((x: any) => x.target === 'ghost')).toBe(false);
   });
   it('does not take members off their site tab', () => {
-    const site = filterBySite(g, 'X');
+    const graph = { ...g, nodes: g.nodes.map((node: any) => ({ ...node, site: 'DC1' })) };
+    const site = filterBySite(graph, 'DC1');
     expect(site.graph.nodes.map((x: any) => x.node_id)).toEqual(expect.arrayContaining(['a', 'b', 'd']));
   });
   it('keeps graph metadata', () => {

@@ -4,8 +4,13 @@ import { GraphNode, GraphEdge, GraphResponse, NetSource } from "../../../common"
 type G = Pick<GraphResponse, "nodes" | "edges">;
 
 export const OTHER_SITE = "Other";
-export const ALL_SITES = "All";
+export const ALL_SITES = "ALL";
 export const MIN_SITE_NODES = 10;
+export const FIXED_SITE_TABS = ["DC1", "DC2", "D10", "SB"] as const;
+
+export function normalizeSavedTab(tab: string | null): string | null {
+  return tab === "All" ? ALL_SITES : tab;
+}
 
 export type SiteInfo = { site: string; source: NetSource | null };
 
@@ -62,38 +67,25 @@ export function siteOf(graph: G): Map<string, SiteInfo> {
   return out;
 }
 
-// DC sites first in numeric order, then the rest alphabetically.
-function compareSites(a: string, b: string): number {
-  const da = /^DC(\d+)$/.exec(a);
-  const db = /^DC(\d+)$/.exec(b);
-  if (da && db) return Number(da[1]) - Number(db[1]);
-  if (da) return -1;
-  if (db) return 1;
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
 /**
  * The tab a node lands on: its site when that site has a tab, else "Other".
  */
-export function tabOf(info: Map<string, SiteInfo>, minNodes = MIN_SITE_NODES): Map<string, string> {
-  const counts = new Map<string, number>();
-  for (const { site } of info.values()) counts.set(site, (counts.get(site) || 0) + 1);
+export function tabOf(info: Map<string, SiteInfo>, _minNodes = MIN_SITE_NODES): Map<string, string> {
   const out = new Map<string, string>();
   for (const [id, { site }] of info) {
-    out.set(id, site !== OTHER_SITE && (counts.get(site) || 0) >= minNodes ? site : OTHER_SITE);
+    out.set(id, (FIXED_SITE_TABS as readonly string[]).includes(site) ? site : OTHER_SITE);
   }
   return out;
 }
 
 /**
- * Tab names: every site holding at least `minNodes` nodes, then "Other" when
- * anything falls outside them, then "All". Empty when no node has a site, so a
- * graph without classification shows no tabs.
+ * Fixed site tabs in contract order, then Other for all remaining sites, then ALL.
  */
-export function siteTabs(graph: G, minNodes = MIN_SITE_NODES): string[] {
-  if (!graph.nodes.some((n) => cleanSite(n))) return [];
-  const tabs = tabOf(siteOf(graph), minNodes);
-  const sites = [...new Set(tabs.values())].filter((s) => s !== OTHER_SITE).sort(compareSites);
+export function siteTabs(graph: G, _minNodes = MIN_SITE_NODES): string[] {
+  if (!graph.nodes.length) return [];
+  const tabs = tabOf(siteOf(graph));
+  const present = new Set(tabs.values());
+  const sites = FIXED_SITE_TABS.filter((s) => present.has(s));
   const hasOther = [...tabs.values()].includes(OTHER_SITE);
   return [...sites, ...(hasOther ? [OTHER_SITE] : []), ALL_SITES];
 }
@@ -111,7 +103,7 @@ export type SiteView<T extends G = G> = {
 /**
  * The graph of one tab: its nodes and the edges between them. Every node with
  * a link into another tab is listed in `cross`, with the peers it links to.
- * The "All" tab returns the whole graph unchanged and no badges.
+ * The "ALL" tab returns the whole graph unchanged and no badges.
  */
 export function filterBySite<T extends G>(graph: T, tab: string, minNodes = MIN_SITE_NODES): SiteView<T> {
   const tabs = tabOf(siteOf(graph), minNodes);

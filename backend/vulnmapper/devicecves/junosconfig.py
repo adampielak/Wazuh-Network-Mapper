@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import fnmatch
 from typing import Optional
 
 from . import conditions as cond
@@ -125,51 +126,69 @@ class JunosConfig:
 
     def ports(self) -> dict:
         """``{physical ifname: {"described": bool, "trunk": bool}}``, from
-        ``interfaces`` statements and ``interface-range`` members. Groups are
-        not read."""
-        out: dict = {}
-        ranges: dict = {}          # range name -> {"members": set, "described", "trunk"}
+        direct interface statements, interface ranges and applied groups."""
+        direct: dict = {}
+        ranges: dict = {}
+        group_paths: dict = {}
+        apply_groups = []
 
-        def mark(meta: dict, rest: list, active: bool) -> None:
+        def settings(meta: dict, rest: list) -> None:
             low = [t.lower() for t in rest]
-            if active and "description" in low:
+            if "description" in low:
                 i = low.index("description")
                 text = _unquote(rest[i + 1]).strip() if i + 1 < len(rest) else ""
-                if text and not _PLACEHOLDER_DESC.match(text):
-                    meta["described"] = True
-            if active and any(low[i] in ("interface-mode", "port-mode") and low[i + 1] == "trunk"
-                              for i in range(len(low) - 1)):
-                meta["trunk"] = True
+                meta["described"] = bool(text and not _PLACEHOLDER_DESC.match(text))
+            for i in range(len(low) - 1):
+                if low[i] in ("interface-mode", "port-mode"):
+                    meta["trunk"] = low[i + 1] == "trunk"
 
         for raw, active in zip(self.raw_paths, self.active):
-            if len(raw) < 3 or raw[0] != "interfaces":
+            if not active:
                 continue
-            name = raw[1]
-            if name == "interface-range":
-                if len(raw) < 4:
-                    continue
-                r = ranges.setdefault(raw[2], {"members": set(), "described": False, "trunk": False})
-                rest = raw[3:]
-                if not active:
-                    continue
-                if rest[0] == "member" and len(rest) > 1:
-                    r["members"].add(_unquote(rest[1]))
-                elif rest[0] == "member-range" and len(rest) > 3 and rest[2] == "to":
-                    r["members"].update(_expand(rest[1], rest[3]))
-                else:
-                    mark(r, rest, active)
-                continue
-            if not _PHYSICAL.match(name):
-                continue
-            meta = out.setdefault(name, {"described": False, "trunk": False})
-            mark(meta, raw[2:], active)
+            if raw[0] != "groups" and "apply-groups" in [t.lower() for t in raw]:
+                i = [t.lower() for t in raw].index("apply-groups")
+                apply_groups.append((tuple(t.lower() for t in raw[:i]),
+                                     tuple(raw[i + 1:])))
+            if raw[0] == "groups" and len(raw) > 2:
+                group_paths.setdefault(raw[1], []).append(raw[2:])
+            elif len(raw) > 2 and raw[0] == "interfaces":
+                name = raw[1]
+                if name == "interface-range" and len(raw) > 3:
+                    r = ranges.setdefault(raw[2], {"members": set(), "settings": {}})
+                    rest = raw[3:]
+                    if rest[0] == "member" and len(rest) > 1:
+                        r["members"].add(_unquote(rest[1]))
+                    elif rest[0] == "member-range" and len(rest) > 3 and rest[2] == "to":
+                        r["members"].update(_expand(rest[1], rest[3]))
+                    else:
+                        settings(r["settings"], rest)
+                elif _PHYSICAL.match(name):
+                    settings(direct.setdefault(name, {}), raw[2:])
+
+        known = set(direct)
         for r in ranges.values():
-            for member in r["members"]:
-                if not _PHYSICAL.match(member):
-                    continue       # a wildcard member: not expanded
-                meta = out.setdefault(member, {"described": False, "trunk": False})
-                meta["described"] = meta["described"] or r["described"]
-                meta["trunk"] = meta["trunk"] or r["trunk"]
+            patterns = [m for m in r["members"] if "*" in m or "?" in m or "[" in m]
+            r["members"].update(name for name in known
+                                if any(fnmatch.fnmatchcase(name, pattern) for pattern in patterns))
+
+        out = {}
+        for name in sorted(known | {m for r in ranges.values() for m in r["members"]
+                                    if _PHYSICAL.match(m)}):
+            inherited = {}
+            for scope, groups in apply_groups:
+                target = ("interfaces", name)
+                if scope and target[:len(scope)] != scope:
+                    continue
+                for group in groups:
+                    for gp in group_paths.get(group, []):
+                        if len(gp) >= 2 and gp[0].lower() == "interfaces" and gp[1].lower() == name.lower():
+                            settings(inherited, gp[2:])
+            for r in ranges.values():
+                if name in r["members"]:
+                    inherited.update(r["settings"])
+            inherited.update(direct.get(name, {}))
+            out[name] = {"described": bool(inherited.get("described")),
+                         "trunk": bool(inherited.get("trunk"))}
         return out
 
 

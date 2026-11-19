@@ -187,15 +187,33 @@ class TestConfig(unittest.TestCase):
         p = jc.JunosConfig(CONFIG).ports()
         self.assertEqual(p["xe-0/0/38"], {"described": True, "trunk": False})
         self.assertEqual(p["mge-0/0/25"], {"described": True, "trunk": True})
-        self.assertEqual(p["ge-0/0/2"], {"described": False, "trunk": False})   # placeholder text
+        self.assertEqual(p["ge-0/0/2"], {"described": False, "trunk": True})    # range trunk applies
         self.assertTrue(p["ge-0/0/3"]["described"])                              # unit description
-        self.assertFalse(p["ge-0/0/9"]["described"])                             # deactivated
+        self.assertNotIn("ge-0/0/9", p)                                           # inactive, not a known member
         self.assertTrue(p["ge-0/0/10"]["trunk"])                                 # port-mode trunk
         for name in ("ge-0/0/20", "ge-0/0/30", "ge-0/0/31", "ge-0/0/32"):
             self.assertEqual(p[name], {"described": True, "trunk": True}, name)
         self.assertNotIn("ge-0/0/33", p)
         self.assertNotIn("irb", p)
         self.assertFalse(any("*" in k for k in p))
+
+    def test_apply_groups_and_bounded_interface_wildcard(self):
+        text = """set interfaces ge-0/0/0 unit 0 family ethernet-switching interface-mode access
+set interfaces ge-0/0/1 unit 0 family ethernet-switching interface-mode access
+set interfaces ge-0/0/2 unit 0 family ethernet-switching interface-mode access
+set interfaces interface-range EDGE member "ge-0/0/*"
+set interfaces interface-range EDGE description "edge ports"
+set interfaces interface-range EDGE unit 0 family ethernet-switching interface-mode trunk
+set interfaces ge-0/0/0 description "local port"
+set interfaces ge-0/0/0 unit 0 family ethernet-switching interface-mode access
+set apply-groups BASE
+set groups BASE interfaces ge-0/0/2 description "from group"
+"""
+        ports = jc.JunosConfig(text).ports()
+        self.assertEqual(set(ports), {"ge-0/0/0", "ge-0/0/1", "ge-0/0/2"})
+        self.assertEqual(ports["ge-0/0/0"], {"described": True, "trunk": False})
+        self.assertEqual(ports["ge-0/0/1"], {"described": True, "trunk": False})
+        self.assertEqual(ports["ge-0/0/2"], {"described": True, "trunk": False})
 
     def test_expand(self):
         self.assertEqual(jc._expand("xe-0/0/1", "xe-0/0/3"), ["xe-0/0/1", "xe-0/0/2", "xe-0/0/3"])

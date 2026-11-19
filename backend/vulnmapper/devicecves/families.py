@@ -8,6 +8,8 @@ from __future__ import annotations
 import re
 from typing import Optional
 
+from .vmware_builds import BUILD_UPDATES
+
 # Cisco families in the order they must be tested: an IOS XE description also
 # contains the words "IOS Software", so XE, XR, NX-OS and ASA come first.
 # NVD files vulnerabilities under CPE 2.3 names, e.g.
@@ -91,6 +93,18 @@ FAMILIES: dict = {
     # release. Major 15 and older are left to hp_procurve.
     "hp_arubaos_switch": {"label": "ArubaOS-Switch", "cpe": ("o", "hpe", "arubaos-switch"),
                           "listed": "product"},
+    "vyos": {"label": "VyOS", "cpe": ("o", "vyos", "vyos")},
+    # NVD has both edition-specific CPEs; query the unqualified release when
+    # present, then both known editions if the dictionary requires one.
+    "cumulus_linux": {"label": "NVIDIA Cumulus Linux", "cpe": ("o", "nvidia", "cumulus_linux"),
+                       "listed": "product", "editions": ["lts", "-"]},
+    "mlnx_os": {"label": "NVIDIA MLNX-OS", "cpe": ("o", "nvidia", "mlnx-os"),
+                "listed": "product", "editions": ["-", "lts"]},
+    "vmware_esxi": {"label": "VMware ESXi", "cpe": ("o", "vmware", "esxi"),
+                     "listed": "product"},
+    "vmware_vcenter": {"label": "VMware vCenter Server",
+                        "cpe": ("a", "vmware", "vcenter_server"),
+                        "listed": "product"},
     # ProCurve software before ArubaOS-Switch 16 (a train letter before the
     # release: "K.15.xx.xxxx").
     # cpe:2.3:o:hp:procurve_switch_software lists releases with the train
@@ -131,6 +145,8 @@ def detect_family(vendor: Optional[str], sys_descr: Optional[str],
             return "hp_comware"
         if _GBE2C_DESCR.search(descr):
             return "hp_gbe2c"
+    if descr.lower().startswith("vyos"):
+        return "vyos"
     return None
 
 
@@ -155,11 +171,31 @@ _AOS_S = re.compile(r"^(?:[A-Z]{1,3}\.)?(16\.\d{2}\.\d{4})$")
 # only as a part number has no line, and the device is not looked up.
 _AOS_S_LINE = re.compile(r"^(\d{4}[A-Z]?)(?:-|$)", re.I)
 
+# Explicit HPE/Aruba part-number rows verified in the official transceiver
+# guide (https://support.hpe.com/hpesc/public/docDisplay?docId=a00028947en_us)
+# and feature-support matrix (https://www.arubanetworks.com/techdocs/AOS-S/16.10/MWG/content/fsm.htm).
+_AOS_S_PART_LINES = {"J9772A": "2530", "JL253A": "2930f", "JL071A": "3810m"}
+_CUMULUS_KERNEL = re.compile(r"\+cl(\d+\.\d+\.\d+)(?:u\d+)?(?:[.-]|$)", re.I)
+_DOTTED_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
+_VMWARE_UPDATE = re.compile(r"^(\d+\.\d+)\s+(?:update[_ -]?)(\d+[a-z]?)$", re.I)
+_VMWARE_BUILD = re.compile(r"^(\d+\.\d+\.\d+)\s+build-(\d+)$", re.I)
+_UPDATE_TOKEN = re.compile(r"^update_?(\d+[a-z]?)$", re.I)
+
+
+def _vmware_update(family: str, token: str) -> Optional[str]:
+    match = _UPDATE_TOKEN.match(token)
+    if not match:
+        return None
+    return ("update_" if family == "vmware_esxi" else "update") + match.group(1).lower()
+
 
 def aos_s_line(model: Optional[str]) -> Optional[str]:
     """The ArubaOS-Switch product line of a model, lower case: "Aruba 2620-48"
     -> "2620"; None when the model names no line."""
     for word in (model or "").replace("(", " ").replace(")", " ").split():
+        part = _AOS_S_PART_LINES.get(word.strip(",;").upper())
+        if part:
+            return part
         m = _AOS_S_LINE.match(word)
         if m:
             return m.group(1).lower()
@@ -236,6 +272,34 @@ def identify(node: dict) -> dict:
     if family == "hp_arubaos_switch":
         am = _AOS_S.match(firmware)
         firmware = am.group(1) if am else ""
+    if family == "vyos":
+        firmware = re.sub(r"^VyOS\s+", "", firmware, flags=re.I).strip()
+        if not _DOTTED_VERSION.match(firmware):
+            firmware = ""
+    if family == "cumulus_linux":
+        cm = _CUMULUS_KERNEL.search(firmware)
+        firmware = cm.group(1) if cm else firmware
+        if not _DOTTED_VERSION.match(firmware):
+            firmware = ""
+    if family == "mlnx_os" and not re.fullmatch(r"\d+\.\d+\.\d+", firmware):
+        firmware = ""
+    update = None
+    if family in ("vmware_esxi", "vmware_vcenter"):
+        vm = _VMWARE_UPDATE.match(firmware)
+        if vm:
+            firmware, token = vm.groups()
+            update = _vmware_update(family, "update" + token)
+        else:
+            build = _VMWARE_BUILD.match(firmware)
+            mapped = BUILD_UPDATES.get((family, build.group(2))) if build else None
+            normalized = _vmware_update(family, mapped[1]) if mapped else None
+            if build and mapped and build.group(1) == mapped[0] and normalized:
+                firmware, update = ".".join(build.group(1).split(".")[:2]), normalized
+            else:
+                # A bare release or unmapped build cannot identify an update train.
+                out["family"] = family
+                out["unverified_reason"] = "version_update_unknown"
+                return out
     if entry is None:
         return out
     out["family"] = family
@@ -254,7 +318,13 @@ def identify(node: dict) -> dict:
             out["match"] = "cpe"
             return out
         out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{cpe_value(firmware)}:*:*:*:*:*:*:*"
+        if update:
+            out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{cpe_value(firmware)}:{cpe_value(update)}:*:*:*:*:*:*"
         out["match"] = "cpe"
+        editions = entry.get("editions")
+        if editions:
+            base = out["cpe"].split(":")
+            out["extra_cpes"] = [":".join(base[:9] + [edition] + base[10:]) for edition in editions]
         if family == "hp_arubaos_switch":
             line = aos_s_line(node.get("model"))
             out["extra_cpes"] = [f"cpe:2.3:o:arubanetworks:{line}_firmware:{firmware}:*:*:*:*:*:*:*"] \

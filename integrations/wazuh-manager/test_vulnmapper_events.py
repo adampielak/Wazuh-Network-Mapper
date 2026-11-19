@@ -56,7 +56,14 @@ class EmitterTest(unittest.TestCase):
         with open(path, encoding="utf-8") as fh:
             return [json.loads(line) for line in fh if line.strip()]
 
+    def seed_fingerprint(self):
+        module = load_emitter(self.dir)
+        graph = self.read(self.dir, "graph.json")
+        module.save_fingerprint(self.prev, module.source_fingerprint(graph))
+        return module
+
     def test_unchanged_scan_emits_only_the_result(self):
+        self.seed_fingerprint()
         events = self.run_emitter()
         self.assertEqual([e["event"] for e in events], ["scan_result"])
         self.assertEqual(events[0]["result"], "OK")
@@ -95,6 +102,7 @@ class EmitterTest(unittest.TestCase):
             self.assertIn(expected, kinds)
 
     def test_new_findings_are_classified(self):
+        self.seed_fingerprint()
         old = self.read(self.prev, "vulnerabilities.json")
         for host in old["hosts"].values():
             host["findings"] = []
@@ -114,7 +122,7 @@ class EmitterTest(unittest.TestCase):
         self.assertTrue(classes <= {"critical", "high", "normal"})
 
     def test_a_cap_emits_one_truncated_event(self):
-        module = load_emitter(self.dir)
+        module = self.seed_fingerprint()
         module.MAX_FINDINGS = 1
         old = self.read(self.prev, "vulnerabilities.json")
         for host in old["hosts"].values():
@@ -128,6 +136,40 @@ class EmitterTest(unittest.TestCase):
         self.assertEqual(kinds.count("finding_truncated"), 1)
         truncated = next(e for e in events if e["event"] == "finding_truncated")
         self.assertGreater(truncated["total"], truncated["emitted"])
+
+    def test_missing_fingerprint_emits_one_baseline_not_mass_findings(self):
+        old = self.read(self.prev, "vulnerabilities.json")
+        for host in old["hosts"].values():
+            host["findings"] = []
+        self.write(self.prev, "vulnerabilities.json", old)
+        event_path = os.path.join(self.dir, "events.json")
+        if os.path.exists(event_path):
+            os.remove(event_path)
+        events = self.run_emitter()
+        self.assertEqual([e["event"] for e in events].count("baseline"), 1)
+        self.assertFalse(any(e["event"] in ("finding_new", "finding_truncated") for e in events))
+
+    def test_fingerprint_change_emits_baseline_then_unchanged_sources_emit_new_findings(self):
+        self.seed_fingerprint()
+        current = self.read(self.dir, "graph.json")
+        device = next(n for n in current["nodes"] if n["kind"] == "device")
+        device["software_family"] = "synthetic_family"
+        self.write(self.dir, "graph.json", current)
+        old = self.read(self.prev, "vulnerabilities.json")
+        for host in old["hosts"].values():
+            host["findings"] = []
+        self.write(self.prev, "vulnerabilities.json", old)
+        first = self.run_emitter()
+        self.assertEqual([e["event"] for e in first].count("baseline"), 1)
+        self.assertFalse(any(e["event"] == "finding_new" for e in first))
+
+        self.write(self.prev, "vulnerabilities.json", old)
+        event_path = os.path.join(self.dir, "events.json")
+        if os.path.exists(event_path):
+            os.remove(event_path)
+        events = self.run_emitter()
+        self.assertFalse(any(e["event"] == "baseline" for e in events))
+        self.assertTrue(any(e["event"] == "finding_new" for e in events))
 
     def test_new_attack_paths(self):
         old = self.read(self.prev, "attack_paths.json")
@@ -151,7 +193,7 @@ class EmitterTest(unittest.TestCase):
         self.assertEqual(path["hops"], 1)
 
     def test_rotation_keeps_logcollector_following_a_new_inode(self):
-        module = load_emitter(self.dir)
+        module = self.seed_fingerprint()
         module.MAX_BYTES = 1
         out = os.path.join(self.dir, "events.json")
         with open(out, "w", encoding="utf-8") as fh:

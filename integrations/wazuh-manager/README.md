@@ -36,7 +36,9 @@ from the environment:
 
 The previous publication is the one thing the scanner does not keep on its own:
 copy the three JSON files aside before a scan overwrites them, then run the
-emitter after it. In a wrapper around the scan:
+emitter after it. The emitter keeps `source-fingerprint.json` in `VM_PREV`;
+missing or changed family/version-source state emits one baseline summary and
+suppresses finding deltas for that transition. In a wrapper around the scan:
 
 ```sh
 DATA=/var/lib/vulnmapper
@@ -70,6 +72,7 @@ Events emitted:
 | `link_change` | the confirmed link set changed | `normal` |
 | `ovss_tier_change` | the OVSS findings-by-tier counts changed | `normal` |
 | `finding_new` | a (node, CVE, package) triple that was not there before | by tier and KEV |
+| `baseline` | a bounded summary when prior family/version-source state is missing or changes | source fingerprint and total counts |
 | `attack_path_new` | a route identity that was not there before | by target importance |
 | `device_truncated`, `finding_truncated`, `route_truncated` | a per-kind cap was hit | `high` |
 

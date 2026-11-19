@@ -15,7 +15,7 @@ from vulnmapper.devicecves.juniper import trim_record
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 JUNIPER_DIR = os.path.join(HERE, "fixtures", "juniper")
-MODELS = ("mx204", "ex4300-48t", "750-123456")      # the last: a part number, not placeable
+MODELS = ("mx204", "ex4300-48t")
 
 
 def cna_record(cve_id):
@@ -138,12 +138,14 @@ class TestPublishedRecords(unittest.TestCase):
         # affected on QFX5000 and MX only; a second block states 21.1 unaffected
         self.check("CVE-2022-22210", [
             ("20.4R3.8", {"mx204": (AFFECTED, None), "ex4300-48t": (UNAFFECTED, None),
-                          "qfx5130-32cd": (AFFECTED, None), "750-123456": (AFFECTED, None)}),
+                          "qfx5130-32cd": (AFFECTED, None), "750-123456": (UNAFFECTED, None)}),
             ("21.2R2.6", {"mx204": (AFFECTED, None), "ex4300-48t": (UNAFFECTED, None)}),
             ("21.4R3-S5.4", self.every(UNAFFECTED)),
             # named in the other block, so assessed: not train_not_listed
             ("21.1R1.11", self.every(UNAFFECTED)),
         ])
+        self.assertEqual(decide(blocks_of("CVE-2022-22210"), "20.4R3.8", "750-123456"),
+                         (UNAFFECTED, None))
 
     def test_single_releases_and_timeline_entries(self):
         # "19.3R3-S2; 19.4R3-S3; 20.2 versions 20.2R2-S3 and later, prior to
@@ -179,7 +181,7 @@ class TestPublishedRecords(unittest.TestCase):
         # SRX and MX Series, versions stated as SigPack releases, not Junos releases
         self.check("CVE-2023-28985", [
             ("21.4R3-S5.4", {"mx204": (UNDECIDED, "SigPack"), "srx345": (UNDECIDED, "SigPack"),
-                             "750-123456": (UNDECIDED, "SigPack"),
+                             "750-123456": (UNAFFECTED, "platform"),
                              "ex4300-48t": (UNAFFECTED, "platform")}),
         ])
 
@@ -247,9 +249,13 @@ class TestRules(unittest.TestCase):
         self.assertEqual(decide(b, "21.4R2.6", "mx204"), (AFFECTED, None))
         self.assertEqual(decide(b, "21.4R2.6", "qfx5130-32cd"), (AFFECTED, None))
         self.assertEqual(decide(b, "21.4R2.6", "ex4300-48t"), (UNAFFECTED, "platform"))
-        # a model this module cannot place matches every platform block
-        self.assertEqual(decide(b, "21.4R2.6", "750-123456"), (AFFECTED, None))
-        self.assertEqual(decide(b, "21.4R2.6", ""), (AFFECTED, None))
+        # An unplaceable model cannot inherit platform-scoped blocks.
+        self.assertEqual(decide(b, "21.4R2.6", "750-123456"), (UNAFFECTED, "platform"))
+        self.assertEqual(decide(b, "21.4R2.6", ""), (UNAFFECTED, "platform"))
+        self.assertEqual(decide([block(rng("21.4", "21.4R3-S5"))], "21.4R2.6", "750-123456"),
+                         (AFFECTED, None))
+        self.assertEqual(decide([block(rng("21.4", "21.4R3-S5"), platforms=["All products"])],
+                                  "21.4R2.6", "750-123456"), (AFFECTED, None))
 
     def test_platform_in_product_name(self):
         b = [block(rng("21.4", "21.4R3-S5"), product="Junos OS on SRX Series")]
@@ -267,7 +273,8 @@ class TestRules(unittest.TestCase):
         self.assertEqual(junos.decide(b, v, "srx345", description=desc), (AFFECTED, None))
         self.assertEqual(junos.decide(b, v, "VSRX", description=desc), (AFFECTED, None))
         # a model this module cannot place still matches
-        self.assertEqual(junos.decide(b, v, "750-047862", description=desc), (AFFECTED, None))
+        self.assertEqual(junos.decide(b, v, "750-047862", description=desc),
+                         (UNAFFECTED, "platform_description"))
         # without the description the record applies to every model, as before
         self.assertEqual(junos.decide(b, v, "mx480"), (AFFECTED, None))
 

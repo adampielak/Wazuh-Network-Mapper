@@ -52,6 +52,10 @@ class TestFamilyDetection(unittest.TestCase):
         self.assertEqual(detect("HP", "GbE2c L2/L3 Ethernet Blade Switch for HP c-Class BladeSystem"),
                          "hp_gbe2c")
 
+    def test_vyos_sysdescr(self):
+        self.assertEqual(detect("VyOS", "VyOS 1.4.0"), "vyos")
+        self.assertEqual(detect(None, "VyOS 1.4.0"), "vyos")
+
     def test_unknown(self):
         self.assertIsNone(detect("Cisco", "Generic Software, Version 1"))
         self.assertIsNone(detect("unknown vendor", IOS))
@@ -205,9 +209,77 @@ class TestCpe(unittest.TestCase):
 
     def test_arubaos_switch_line(self):
         for model, line in (("Aruba 2620-48", "2620"), ("HP 2930F-24G Switch (JL259A)", "2930f"),
+                            ("J9772A", "2530"), ("JL253A", "2930f"), ("JL071A", "3810m"),
                             ("J0000A", None), (None, None), ("Switch 26200", None)):
             with self.subTest(model=model):
                 self.assertEqual(fam.aos_s_line(model), line)
+
+    def test_new_families_and_version_normalization(self):
+        cases = (
+            ("vyos", "VyOS 1.4.0", "cpe:2.3:o:vyos:vyos:1.4.0:*:*:*:*:*:*:*"),
+            ("vyos", "1.5.2", "cpe:2.3:o:vyos:vyos:1.5.2:*:*:*:*:*:*:*"),
+            ("cumulus_linux", "6.1.94-1+cl5.11.0u10",
+             "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:*:*:*:*"),
+            ("cumulus_linux", "5.11.0", "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:*:*:*:*"),
+            ("mlnx_os", "3.12.2002", "cpe:2.3:o:nvidia:mlnx-os:3.12.2002:*:*:*:*:*:*:*"),
+        )
+        for family, firmware, cpe in cases:
+            with self.subTest(family=family, firmware=firmware):
+                result = self.ident(vendor="vendor", firmware=firmware, software_family=family)
+                self.assertEqual((result["version"], result["cpe"]), (cpe.split(":")[5], cpe))
+        cumulus = self.ident(vendor="NVIDIA", firmware="5.11.0", software_family="cumulus_linux")
+        self.assertEqual(cumulus["extra_cpes"], [
+            "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:lts:*:*:*",
+            "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:-:*:*:*"])
+        for family, firmware in (("vyos", "1.4"), ("vyos", ""),
+                                 ("cumulus_linux", "6.1.94-1"), ("cumulus_linux", "bad"),
+                                 ("mlnx_os", "3.12"), ("mlnx_os", "bad")):
+            with self.subTest(family=family, firmware=firmware):
+                self.assertEqual(self.ident(vendor="vendor", firmware=firmware,
+                                            software_family=family)["match"], "unidentified")
+
+    def test_vmware_explicit_update_and_unknown_builds(self):
+        for family, fw, expected in (
+                ("vmware_esxi", "7.0 Update 3x",
+                 "cpe:2.3:o:vmware:esxi:7.0:update_3x:*:*:*:*:*:*"),
+                ("vmware_vcenter", "8.0 update_3",
+                 "cpe:2.3:a:vmware:vcenter_server:8.0:update3:*:*:*:*:*:*")):
+            result = self.ident(vendor="VMware", firmware=fw, software_family=family)
+            self.assertEqual(result["cpe"], expected)
+        for family, fw in (("vmware_esxi", "7.0.3 build-99999999"),
+                           ("vmware_vcenter", "8.0.3 build-99999998"),
+                           ("vmware_esxi", "7.0.3"), ("vmware_vcenter", "8.0.3")):
+            with self.subTest(family=family, firmware=fw):
+                result = self.ident(vendor="VMware", firmware=fw, software_family=family)
+                self.assertEqual(result["unverified_reason"], "version_update_unknown")
+                self.assertIsNone(result["cpe"])
+
+    def test_vmware_build_mapping_is_family_specific(self):
+        from vulnmapper.devicecves import vmware_builds
+        cases = (
+            ("vmware_esxi", "7.0.3 build-23307199", "update_3p",
+             "cpe:2.3:o:vmware:esxi:7.0:update_3p:*:*:*:*:*:*"),
+            ("vmware_esxi", "7.0.3 build-23794027", "update_3q",
+             "cpe:2.3:o:vmware:esxi:7.0:update_3q:*:*:*:*:*:*"),
+            ("vmware_esxi", "7.0.3 build-24723872", "update_3v",
+             "cpe:2.3:o:vmware:esxi:7.0:update_3v:*:*:*:*:*:*"),
+            ("vmware_esxi", "8.0.3 build-25595708", "update_3k",
+             "cpe:2.3:o:vmware:esxi:8.0:update_3k:*:*:*:*:*:*"),
+            ("vmware_vcenter", "7.0.3 build-24322018", "update3t",
+             "cpe:2.3:a:vmware:vcenter_server:7.0:update3t:*:*:*:*:*:*"),
+            ("vmware_vcenter", "7.0.3 build-24927011", "update3w",
+             "cpe:2.3:a:vmware:vcenter_server:7.0:update3w:*:*:*:*:*:*"),
+            ("vmware_vcenter", "8.0.3 build-25600417", "update3k",
+             "cpe:2.3:a:vmware:vcenter_server:8.0:update3k:*:*:*:*:*:*"),
+        )
+        self.assertEqual(len(vmware_builds.BUILD_UPDATES), len(cases))
+        for family, firmware, token, expected in cases:
+            with self.subTest(family=family, firmware=firmware, token=token):
+                result = self.ident(vendor="VMware", firmware=firmware, software_family=family)
+                self.assertEqual(result["cpe"], expected)
+        mismatch = self.ident(vendor="VMware", firmware="7.0.2 build-23307199",
+                              software_family="vmware_esxi")
+        self.assertEqual(mismatch["unverified_reason"], "version_update_unknown")
 
     def test_comware_without_a_product_line_is_unidentified(self):
         r = self.ident(vendor="HP", model=None, firmware="5.20.99 Release 1107",

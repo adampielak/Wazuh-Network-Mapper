@@ -15,8 +15,8 @@ would be noise.
 
 Diff inputs: DATA holds what was just published, PREV holds the previous
 publication. Copy the three JSON files to PREV before a new scan overwrites
-them (see README.md). Nothing is kept between runs, so the same finding is
-reported once.
+them (see README.md). A source fingerprint persists in PREV: missing or changed
+family/version-source state emits one baseline summary instead of a finding flood.
 
 Each event carries a `severity_class` the ruleset keys on. Rules must stay
 mutually exclusive: Wazuh fires only one sibling per `if_sid` parent, so the
@@ -33,6 +33,7 @@ Usage: vulnmapper-events
 import json
 import os
 import socket
+import hashlib
 
 DATA = os.environ.get("VM_DATA") or "/var/lib/vulnmapper"
 PREV = os.environ.get("VM_PREV") or DATA + "/last-good"
@@ -100,6 +101,31 @@ def finding_class(f):
     if f.get("tier") == "P1":
         return "high"
     return "normal"
+
+
+def source_fingerprint(graph):
+    """Stable digest of the families, firmware versions and their sources."""
+    sources = set()
+    for n in (graph or {}).get("nodes", []):
+        if n.get("kind") != "device":
+            continue
+        source = n.get("firmware_source") or n.get("version_source")
+        if source is None:
+            source = n.get("sources") or []
+        sources.add((str(n.get("software_family") or ""), str(n.get("firmware") or ""),
+                     json.dumps(source, sort_keys=True, separators=(",", ":"))))
+    encoded = json.dumps(sorted(sources), separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest(), len(sources)
+
+
+def save_fingerprint(path, fingerprint):
+    os.makedirs(path, exist_ok=True)
+    target = os.path.join(path, "source-fingerprint.json")
+    temporary = target + ".tmp"
+    with open(temporary, "w", encoding="utf-8") as fh:
+        json.dump({"sha256": fingerprint[0], "sources": fingerprint[1]}, fh, sort_keys=True)
+        fh.write("\n")
+    os.replace(temporary, target)
 
 
 class Sink:
@@ -243,8 +269,16 @@ def main():
 
     old_vulns = load(PREV + "/vulnerabilities.json")
     old_f = findings(old_vulns)
-    new_f = findings(load(DATA + "/vulnerabilities.json"))
-    if old_vulns is not None:
+    new_vulns = load(DATA + "/vulnerabilities.json")
+    new_f = findings(new_vulns)
+    fingerprint = source_fingerprint(graph)
+    previous_fingerprint = load(PREV + "/source-fingerprint.json")
+    baseline = not previous_fingerprint or previous_fingerprint.get("sha256") != fingerprint[0]
+    if baseline:
+        sink.add("baseline", reason=("source_fingerprint_changed" if previous_fingerprint else "prior_state_missing"),
+                 devices=len(devices(graph)), findings=len(new_f), source_count=fingerprint[1],
+                 source_fingerprint=fingerprint[0], severity_class="normal")
+    elif old_vulns is not None:
         fresh = sorted(set(new_f) - set(old_f))
         for key in fresh[:MAX_FINDINGS]:
             hostname, f = new_f[key]
@@ -270,6 +304,7 @@ def main():
                 emitted=MAX_FINDINGS,
                 severity_class="high",
             )
+    save_fingerprint(PREV, fingerprint)
 
     old_paths = load(PREV + "/attack_paths.json")
     old_r = routes(old_paths)

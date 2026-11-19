@@ -289,6 +289,16 @@ class TestQueries(Base):
         self.assertEqual(len(fake.calls), 1)
         self.assertEqual(saved("cpes_not_listed.json")["totalResults"], 0)
 
+    def test_release_listed_junos_cpe_with_update_keeps_original_reason(self):
+        cpe = "cpe:2.3:o:juniper:junos:21.4:r3-s2:*:*:*:*:*:*"
+        ident = ident_for(cpe, "Juniper Junos 21.4R3-S2", "21.4R3-S2")
+        ident["family"] = "juniper_junos"
+        fake = self.nvd(dictionary={})
+        result, _ = self.run_lookup(fake, ident=ident)
+        self.assertEqual((result.status, result.reason, result.rows),
+                         ("unverified", "not_in_dictionary", None))
+        self.assertEqual([call["params"].get("cpeMatchString") for call in fake.calls], [cpe])
+
     def test_malformed_query_is_unverified(self):
         result, _ = self.run_lookup(self.nvd(script=[404]))
         self.assertEqual((result.status, result.reason), ("unverified", "invalid_query"))
@@ -705,7 +715,7 @@ class TestFamilyRules(Base):
                                software_family="vyos"), self.client(self.nvd(dictionary={})),
                         Cache(None, self.clock))
         self.assertEqual((result.status, result.reason, result.rows),
-                         ("unverified", "cpe_not_in_nvd_dictionary", None))
+                         ("unverified", "not_in_dictionary", None))
         self.assertEqual(result.cpe, cpe)
 
     def test_vyos_update_qualifier_present_in_nvd_dictionary_is_queried(self):

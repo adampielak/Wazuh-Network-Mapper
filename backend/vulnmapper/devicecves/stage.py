@@ -35,7 +35,8 @@ log = logging.getLogger("vulnmapper.devicecves")
 #   ``cve_summary``, ``top_cves``, ``max_cvss``, and
 #   ``cve_lookup``: {status, match, product, cpe, source, fetched_at, stale, total}
 #   (``reason`` when the status is not ok and the lookup said why, e.g.
-#   "not_in_dictionary", "juniper_records_incomplete", "version_not_comparable",
+#   "not_in_dictionary", "cpe_not_in_nvd_dictionary", "juniper_records_incomplete",
+#   "version_not_comparable",
 #   "no_cpe_rule", "model_not_mapped";
 #   Junos also ``undecided``: CVE ids whose records make no claim for its release,
 #   and with a configuration index entry ``config``: {complete, reason, excluded},

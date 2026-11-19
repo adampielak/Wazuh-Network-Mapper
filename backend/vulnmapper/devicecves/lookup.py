@@ -263,9 +263,7 @@ def lookup(ident: dict, client: NvdClient, cache: Cache, juniper=None,
                     listed = _answer(cache, f"cpe-dictionary:{probe}",
                                      lambda probe=probe: client.cpe_listed(probe), bool, result)
                     if not listed["data"]:
-                        reason = "cpe_not_in_nvd_dictionary" if has_update_token and probe == cpe \
-                            else "not_in_dictionary"
-                        result.status, result.reason = STATUS_UNVERIFIED, reason
+                        result.status, result.reason = STATUS_UNVERIFIED, "not_in_dictionary"
                         result.fetched_at = listed["fetched_at"]
                         return result
                     if has_update_token and probe != cpe:

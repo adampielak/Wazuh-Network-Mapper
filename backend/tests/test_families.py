@@ -246,6 +246,7 @@ class TestCpe(unittest.TestCase):
         cases = (
             ("VyOS 1.5-stream-2025-Q2", "version_stream_unlisted"),
             ("VyOS 2025.11", "version_rolling_unlisted"),
+            ("VyOS 1.4-rolling-202403290936", "version_rolling_unlisted"),
         )
         for firmware, reason in cases:
             with self.subTest(firmware=firmware):

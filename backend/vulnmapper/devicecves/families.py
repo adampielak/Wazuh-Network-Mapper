@@ -177,6 +177,9 @@ _AOS_S_LINE = re.compile(r"^(\d{4}[A-Z]?)(?:-|$)", re.I)
 _AOS_S_PART_LINES = {"J9772A": "2530", "JL253A": "2930f", "JL071A": "3810m"}
 _CUMULUS_KERNEL = re.compile(r"\+cl(\d+\.\d+\.\d+)(?:u\d+)?(?:[.-]|$)", re.I)
 _DOTTED_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
+_VYOS_RELEASE = re.compile(r"^(\d+\.\d+\.\d+)(?::(r\d+|rc\d+))?$", re.I)
+_VYOS_STREAM = re.compile(r"^\d+\.\d+-stream(?:-|$)", re.I)
+_VYOS_ROLLING = re.compile(r"^\d{4}\.\d{2}$")
 _VMWARE_UPDATE = re.compile(r"^(\d+\.\d+)\s+(?:update[_ -]?)(\d+[a-z]?)$", re.I)
 _VMWARE_BUILD = re.compile(r"^(\d+\.\d+\.\d+)\s+build-(\d+)$", re.I)
 _UPDATE_TOKEN = re.compile(r"^update_?(\d+[a-z]?)$", re.I)
@@ -274,7 +277,15 @@ def identify(node: dict) -> dict:
         firmware = am.group(1) if am else ""
     if family == "vyos":
         firmware = re.sub(r"^VyOS\s+", "", firmware, flags=re.I).strip()
-        if not _DOTTED_VERSION.match(firmware):
+        if _VYOS_STREAM.match(firmware):
+            out["family"] = family
+            out["unverified_reason"] = "version_stream_unlisted"
+            return out
+        if _VYOS_ROLLING.fullmatch(firmware):
+            out["family"] = family
+            out["unverified_reason"] = "version_rolling_unlisted"
+            return out
+        if not _VYOS_RELEASE.fullmatch(firmware):
             firmware = ""
     if family == "cumulus_linux":
         cm = _CUMULUS_KERNEL.search(firmware)
@@ -315,6 +326,12 @@ def identify(node: dict) -> dict:
             return out                    # release of the other Junos branch: no claim
         if jm:
             out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{jm.group(1)}:{jm.group(2).lower()}:*:*:*:*:*:*"
+            out["match"] = "cpe"
+            return out
+        if family == "vyos":
+            vyos = _VYOS_RELEASE.fullmatch(firmware)
+            version, update = vyos.groups()
+            out["cpe"] = f"cpe:2.3:o:vyos:vyos:{version}:{update or '*'}:*:*:*:*:*:*"
             out["match"] = "cpe"
             return out
         out["cpe"] = f"cpe:2.3:{part}:{vendor}:{product}:{cpe_value(firmware)}:*:*:*:*:*:*:*"

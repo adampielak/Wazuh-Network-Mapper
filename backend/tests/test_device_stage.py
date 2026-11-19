@@ -121,6 +121,16 @@ class TestStatusTable(unittest.TestCase):
                          ("unverified", "version_update_unknown"))
         self.assertEqual(self.client.requests, 0)
 
+    def test_vyos_stream_and_rolling_get_distinct_unverified_reasons(self):
+        for firmware, reason in (("VyOS 1.5-stream-2025-Q2", "version_stream_unlisted"),
+                                 ("VyOS 2025.11", "version_rolling_unlisted")):
+            with self.subTest(firmware=firmware):
+                (node,), _ = self.stage(device(vendor="VyOS", model=None, firmware=firmware,
+                                               software_family="vyos"))
+                self.assertEqual((node["cve_lookup"]["status"], node["cve_lookup"]["reason"]),
+                                 ("unverified", reason))
+                self.assertEqual(self.client.requests, 0)
+
     def test_device_not_polled_but_with_a_recorded_family_is_looked_up(self):
         (node,), result = self.stage(device(pollable=False, status="discovered"))
         self.assertEqual(node["cve_lookup"]["status"], "ok")

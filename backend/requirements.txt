@@ -1,4 +1,5 @@
 pysnmp>=7,<8
+cryptography>=43
 requests
 urllib3
 networkx==3.4.2

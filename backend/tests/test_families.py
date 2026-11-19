@@ -216,17 +216,21 @@ class TestCpe(unittest.TestCase):
 
     def test_new_families_and_version_normalization(self):
         cases = (
-            ("vyos", "VyOS 1.4.0", "cpe:2.3:o:vyos:vyos:1.4.0:*:*:*:*:*:*:*"),
-            ("vyos", "1.5.2", "cpe:2.3:o:vyos:vyos:1.5.2:*:*:*:*:*:*:*"),
+            ("vyos", "VyOS 1.4.0", "1.4.0", "cpe:2.3:o:vyos:vyos:1.4.0:*:*:*:*:*:*:*"),
+            ("vyos", "1.5.2", "1.5.2", "cpe:2.3:o:vyos:vyos:1.5.2:*:*:*:*:*:*:*"),
+            ("vyos", "VyOS 1.1.7:r2", "1.1.7:r2", "cpe:2.3:o:vyos:vyos:1.1.7:r2:*:*:*:*:*:*"),
+            ("vyos", "VyOS 1.2.0:rc1", "1.2.0:rc1", "cpe:2.3:o:vyos:vyos:1.2.0:rc1:*:*:*:*:*:*"),
             ("cumulus_linux", "6.1.94-1+cl5.11.0u10",
+             "5.11.0", "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:*:*:*:*"),
+            ("cumulus_linux", "5.11.0", "5.11.0",
              "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:*:*:*:*"),
-            ("cumulus_linux", "5.11.0", "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:*:*:*:*"),
-            ("mlnx_os", "3.12.2002", "cpe:2.3:o:nvidia:mlnx-os:3.12.2002:*:*:*:*:*:*:*"),
+            ("mlnx_os", "3.12.2002", "3.12.2002",
+             "cpe:2.3:o:nvidia:mlnx-os:3.12.2002:*:*:*:*:*:*:*"),
         )
-        for family, firmware, cpe in cases:
+        for family, firmware, version, cpe in cases:
             with self.subTest(family=family, firmware=firmware):
                 result = self.ident(vendor="vendor", firmware=firmware, software_family=family)
-                self.assertEqual((result["version"], result["cpe"]), (cpe.split(":")[5], cpe))
+                self.assertEqual((result["version"], result["cpe"]), (version, cpe))
         cumulus = self.ident(vendor="NVIDIA", firmware="5.11.0", software_family="cumulus_linux")
         self.assertEqual(cumulus["extra_cpes"], [
             "cpe:2.3:o:nvidia:cumulus_linux:5.11.0:*:*:*:lts:*:*:*",
@@ -237,6 +241,18 @@ class TestCpe(unittest.TestCase):
             with self.subTest(family=family, firmware=firmware):
                 self.assertEqual(self.ident(vendor="vendor", firmware=firmware,
                                             software_family=family)["match"], "unidentified")
+
+    def test_vyos_stream_and_rolling_are_unverified(self):
+        cases = (
+            ("VyOS 1.5-stream-2025-Q2", "version_stream_unlisted"),
+            ("VyOS 2025.11", "version_rolling_unlisted"),
+        )
+        for firmware, reason in cases:
+            with self.subTest(firmware=firmware):
+                result = self.ident(vendor="VyOS", firmware=firmware, software_family="vyos")
+                self.assertEqual((result["family"], result["match"], result["cpe"],
+                                  result["unverified_reason"]),
+                                 ("vyos", "unidentified", None, reason))
 
     def test_vmware_explicit_update_and_unknown_builds(self):
         for family, fw, expected in (

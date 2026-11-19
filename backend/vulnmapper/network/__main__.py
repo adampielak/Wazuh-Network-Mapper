@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--community", action="append", metavar="STRING",
         help="SNMPv2c community to TRY (repeatable). Also read from "
              f"${ENV_COMMUNITIES}/${ENV_COMMUNITY}. Operator-known "
-             "strings only — community strings are never brute-forced.",
+             "strings only - community strings are never brute-forced.",
     )
     parser.add_argument(
         "--seed", action="append", metavar="IP",

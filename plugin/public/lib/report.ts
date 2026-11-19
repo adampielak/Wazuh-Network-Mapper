@@ -262,7 +262,7 @@ export function remediationActions(report: AssetReport): RemediationAction[] {
   const actions: RemediationAction[] = [];
   const { node } = report;
 
-  // 1) Configuration findings — the checklist's own remediation text, verbatim.
+  // 1) Configuration findings - the checklist's own remediation text, verbatim.
   for (const f of report.configFindings) {
     const ref = f.references?.[0];
     actions.push({
@@ -274,7 +274,7 @@ export function remediationActions(report: AssetReport): RemediationAction[] {
     });
   }
 
-  // 2) CVEs — one generic line by asset kind, if the asset has any CVEs.
+  // 2) CVEs - one generic line by asset kind, if the asset has any CVEs.
   if (report.cves.length > 0) {
     // the rows are in OVSS order, so find the worst CVSS band among them
     const worst = report.cves.reduce((w, c) => (SEVERITY_RANK[c.severity] > SEVERITY_RANK[w] ? c.severity : w), report.cves[0].severity);
@@ -292,7 +292,7 @@ export function remediationActions(report: AssetReport): RemediationAction[] {
     }
   }
 
-  // 3) Unmanaged host — its software is otherwise unknown.
+  // 3) Unmanaged host - its software is otherwise unknown.
   if (node.kind === 'endpoint' && node.unmanaged) {
     actions.push({ severity: null, source: 'coverage', text: COVERAGE_GUIDANCE });
   }
@@ -300,7 +300,7 @@ export function remediationActions(report: AssetReport): RemediationAction[] {
   // Order by severity of what each action addresses (informational last).
   actions.sort((a, b) => (b.severity ? SEVERITY_RANK[b.severity] : 0) - (a.severity ? SEVERITY_RANK[a.severity] : 0));
 
-  // 4) On an attack path — note it, last.
+  // 4) On an attack path - note it, last.
   if (report.onPath) {
     const n = report.routesThrough;
     actions.push({

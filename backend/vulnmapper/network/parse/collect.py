@@ -100,7 +100,7 @@ async def collect_arp(client, ip: str) -> dict:
 
     The router's ARP table is global, not per-VLAN-indexed, so it is read with the
     plain community (no ``@vlan``). Gives an IP for every MAC the device has
-    routed recently — joined to the forwarding table by MAC.
+    routed recently - joined to the forwarding table by MAC.
     """
     arp = parse_arp(await client.walk(ip, ARP_BASE))
     _log_fdb.info("%s: ARP has %d IP<->MAC mapping(s)", ip, len(arp))
@@ -219,7 +219,7 @@ async def collect_wifi_clients(client, ip: str) -> list[dict]:
 async def collect_port_status(client, ip: str) -> dict:
     """Return ``{port_name: "up"|"down"}`` from a real IF-MIB ifOperStatus walk.
 
-    Independent of LLDP — this is the configured state of every interface, named
+    Independent of LLDP - this is the configured state of every interface, named
     via the global ifName (ifDescr fallback) chain. Best-effort: a device with no
     IF-MIB yields an empty map rather than failing.
     """

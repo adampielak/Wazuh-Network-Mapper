@@ -219,7 +219,7 @@ def parse_oper_status(rows: list[tuple[str, Optional[str]]]) -> dict[str, str]:
     ifOperStatus is an enum: 1 = up, 2 = down, and everything else (testing,
     dormant, lowerLayerDown, ...) is treated as "down" since the node only cares
     whether the port is actually forwarding. The value may render as the raw
-    integer or, with a compiled MIB, as ``up(1)`` — both are handled.
+    integer or, with a compiled MIB, as ``up(1)`` - both are handled.
     """
     out: dict[str, str] = {}
     for oid, value in rows:
@@ -300,7 +300,7 @@ def parse_vtp_vlans(rows: list[tuple[str, Optional[str]]]) -> list[int]:
 
     Index is ``<managementDomain>.<vlanId>``; value is the state (1 ==
     operational). Returns the operational, non-reserved (<1002) VLAN ids sorted
-    ascending — the set to walk the per-VLAN FDB for via the community context.
+    ascending - the set to walk the per-VLAN FDB for via the community context.
     """
     vlans: set[int] = set()
     for oid, value in rows:
@@ -324,7 +324,7 @@ def assemble_dot1d_per_vlan(
     """Assemble per-VLAN dot1d FDB walks into ``[{mac, port, vlan}, ...]``.
 
     ``per_vlan`` maps a VLAN id to ``{"fdb": dot1dTpFdbPort rows, "baseport":
-    dot1dBasePortIfIndex rows}`` — both read in that VLAN's community context, so
+    dot1dBasePortIfIndex rows}`` - both read in that VLAN's community context, so
     the bridge-port numbering is the VLAN's own. ``ifName`` is global. The VLAN
     id is the context it was read under, not decoded from the index.
     """
@@ -349,7 +349,7 @@ def parse_dot1q_fdb(rows: list[tuple[str, Optional[str]]]) -> list[tuple[int, st
 
     Index is ``<fdbId/vlan>.<m1>.<m2>.<m3>.<m4>.<m5>.<m6>``; value is the bridge
     port. When the table was read via the per-VLAN community context the fdbId
-    arc may be 0 — callers can pass the contextual VLAN through separately, but
+    arc may be 0 - callers can pass the contextual VLAN through separately, but
     the in-index VLAN is returned here as-is.
     """
     out: list[tuple[int, str, str]] = []
@@ -396,7 +396,7 @@ def resolve_port(
     """Translate a bridge port to a human port name, best-effort.
 
     bridge-port -> ifIndex -> ifName. If either hop is missing, fall back to the
-    ifIndex, then to the raw bridge-port number — never lose the location.
+    ifIndex, then to the raw bridge-port number - never lose the location.
     """
     ifindex = baseport_ifindex.get(bridge_port)
     if ifindex is None:
@@ -417,7 +417,7 @@ def build_fdb(
 
     Prefer the 802.1Q data (``dot1q_rows_by_vlan`` keyed by the VLAN the rows
     were read under, or a single ``dot1q_rows`` walk) and fall back to the flat
-    802.1D ``dot1d_rows`` only when no 802.1Q rows are present — mirroring the
+    802.1D ``dot1d_rows`` only when no 802.1Q rows are present - mirroring the
     crawler's "try dot1q first" probe. Ports are resolved to names via the
     bridge-port/ifIndex/ifName chain.
     """

@@ -28,7 +28,7 @@ _SEPARATORS = re.compile(r"[\s:.\-]")
 def canonical_mac(value: MacInput) -> Optional[str]:
     """Canonicalize any MAC representation to bare lowercase 12-hex.
 
-    This is the comparison key — ``e4:a7:a0:25:ce:ad``, ``E4-A7-A0-25-CE-AD``,
+    This is the comparison key - ``e4:a7:a0:25:ce:ad``, ``E4-A7-A0-25-CE-AD``,
     ``0xe4a7a025cead``, ``e4a7.a025.cead`` and the raw 6-byte OctetString all
     collapse to ``"e4a7a025cead"``. Returns ``None`` when the value is not a
     6-byte MAC (e.g. an LLDP chassis id that is a name or network address), so a
@@ -228,7 +228,7 @@ class Node:
     status: Optional[str] = None
     # ``role`` is what the node IS (l3-switch / l2-switch / router / access-point
     # / phone / station / host / "Unknown Network Device"), derived purely from
-    # the LLDP capability bitmap — no vendor/model guessing. Distinct from
+    # the LLDP capability bitmap - no vendor/model guessing. Distinct from
     # ``kind`` (which records which discovery track found it).
     role: Optional[str] = None
     # ---- endpoint extras ----
@@ -259,7 +259,7 @@ class Node:
     # An access point: how many clients it reported; None for anything else.
     wifi_clients: Optional[int] = None
     # True when this endpoint's IP collides with a currently-active endpoint and
-    # its own status is disconnected (a stale Wazuh agent — IP reassigned).
+    # its own status is disconnected (a stale Wazuh agent - IP reassigned).
     stale: bool = False
     # ---- device extras ----
     chassis_id: Optional[str] = None
